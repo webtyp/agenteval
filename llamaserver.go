@@ -176,14 +176,25 @@ func (m *modelServer) budget() (agentcontext.Budget, error) {
 func (m *modelServer) Generate(ctx *context.Context, req llm.Request) (llm.Response, error) {
 	var messages []llamaMessage
 
-	if req.System != "" {
-		messages = append(messages, llamaMessage{
-			Role:    "system",
-			Content: req.System,
-		})
+	// Qwen's chat template accepts one system block, at the start: every llm.RoleSystem message
+	// (summaries, the critic's retry note) is folded into it, as webtyp.com/qwen does.
+	system := req.System
+	for _, msg := range req.Messages {
+		if msg.Role == llm.RoleSystem && msg.Content != "" {
+			if system != "" {
+				system += "\n\n"
+			}
+			system += msg.Content
+		}
+	}
+	if system != "" {
+		messages = append(messages, llamaMessage{Role: "system", Content: system})
 	}
 
 	for _, msg := range req.Messages {
+		if msg.Role == llm.RoleSystem {
+			continue
+		}
 		lm := llamaMessage{
 			Role:    string(msg.Role),
 			Content: msg.Content,
