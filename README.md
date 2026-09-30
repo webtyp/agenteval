@@ -9,8 +9,47 @@ Lo vas a usar cuando cambies el prompt de un agente (por ejemplo, Jose en `velty
 su modelo o su manejo de contexto, y quieras saber si mejoró o empeoró sin revisar las respuestas
 una por una.
 
-> **STATUS (borrar esta nota cuando exista el primer código):** por ahora hay solo documentación y
-> los datos de verificación del juez. La API de escenarios se define en el primer plan.
+## Escribir un escenario
+
+```go
+//go:build eval
+
+package evals
+
+// Caso de uso: un funcionario pregunta hasta qué hora se atiende hoy.
+func TestHorarioDeHoy(t *testing.T) {
+	agenteval.Scenario{
+		Given: agenteval.Given{
+			At:    agenteval.Moment{Year: 2026, Month: 9, Day: 29, Hour: 10, UTCOffsetMinutes: -180},
+			Tools: []agenteval.FakeTool{{
+				Name:        "list_business_hours",
+				Description: "Opening hours of the clinic for every day of the week.",
+				InputSchema: `{"type":"object","properties":{}}`,
+				Action:      model.ActionRead,
+				Returns:     "Monday to Friday 08:00-18:00. Saturday and Sunday closed.",
+			}},
+		},
+		When: "¿Hasta qué hora atendemos hoy?",
+		Then: []agenteval.Check{
+			agenteval.Calls("list_business_hours"),
+			agenteval.DoesNotModify(),
+			agenteval.Contains("18:00"),
+			agenteval.Faithful(),
+		},
+		Runs: 10, MinPass: 9,
+	}.Run(t, jose.New)
+}
+```
+
+Para correr los escenarios se inician el modelo y el juez en `llama-server`:
+
+```bash
+# Modelo bajo prueba
+llama-server -m <model.gguf> --port 8080 --jinja -c 4096 --reasoning-budget 0
+
+# Juez
+llama-server -m decider-4b-v2.1-Q4_K_M.gguf --port 8090 -np 1 -c 4096 -ngl 99
+```
 
 ## Cómo se decide si un intento aprobó
 
