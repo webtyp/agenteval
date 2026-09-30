@@ -3,6 +3,8 @@ PLAN: "feat!: agenteval on agent v0.8 — Reply and pending confirmations, typed
 TAG: v0.2.0
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 11491948376786452849
 ---
 
 > This plan is dispatched via the CodeJob workflow. See skill: agents-workflow.
