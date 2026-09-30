@@ -3,6 +3,8 @@ PLAN: "feat: agenteval — scenarios run N times against llama-server, determini
 TAG: v0.1.0
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 1176723482703663413
 ---
 
 > This plan is dispatched via the CodeJob workflow. See skill: agents-workflow.
