@@ -19,7 +19,13 @@ def tok(text):
     return post("/tokenize", {"content": text, "add_special": False})["tokens"]
 
 
-LETTER_IDS = [tok(L)[0] for L in LETTERS]
+_letter_ids = []
+
+
+def letter_ids():
+    if not _letter_ids:
+        _letter_ids.extend(tok(L)[0] for L in LETTERS)
+    return _letter_ids
 
 
 def decide(state, question, options, T=T_CHOICE):
@@ -32,21 +38,22 @@ def decide(state, question, options, T=T_CHOICE):
     dt = time.time() - t0
     top = r["completion_probabilities"][0]["top_logprobs"]
     lp = {t["id"]: t["logprob"] for t in top}
-    z = [lp.get(LETTER_IDS[j], -1e9) / T for j in range(len(options))]
+    z = [lp.get(letter_ids()[j], -1e9) / T for j in range(len(options))]
     m = max(z)
     p = [math.exp(v - m) for v in z]
     s = sum(p)
     p = [v / s for v in p]
-    missing = [options[j] for j in range(len(options)) if LETTER_IDS[j] not in lp]
+    missing = [options[j] for j in range(len(options)) if letter_ids()[j] not in lp]
     j = max(range(len(options)), key=lambda i: p[i])
     return {"choice": options[j], "confidence": round(p[j], 3),
             "probs": {o: round(v, 3) for o, v in zip(options, p)},
-            "letter_mass": round(sum(math.exp(lp[LETTER_IDS[i]]) for i in range(len(options)) if LETTER_IDS[i] in lp), 3),
+            "letter_mass": round(sum(math.exp(lp[letter_ids()[i]]) for i in range(len(options)) if letter_ids()[i] in lp), 3),
             "missing": missing, "ms": int(dt * 1000), "tokens": len(ids)}
 
 
-CASES = json.load(open(sys.argv[1]))
-for c in CASES:
-    out = decide(c["state"], c["question"], c["options"], c.get("T", T_CHOICE))
-    ok = out["choice"] == c["expect"]
-    print(("OK  " if ok else "FAIL") + f" {c['name']}: {json.dumps(out, ensure_ascii=False)}")
+if __name__ == "__main__":
+    for path in sys.argv[1:]:
+        for c in json.load(open(path)):
+            out = decide(c["state"], c["question"], c["options"], c.get("T", T_CHOICE))
+            ok = out["choice"] == c["expect"]
+            print(("OK  " if ok else "FAIL") + f" {c['name']}: {json.dumps(out, ensure_ascii=False)}")
