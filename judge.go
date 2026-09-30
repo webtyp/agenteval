@@ -35,6 +35,7 @@ const (
 type deciderJudge struct {
 	url    string
 	client *http.Client
+	*llamaTokenizer
 }
 
 // NewDeciderJudge creates a new decider-4b judge client.
@@ -46,10 +47,8 @@ func NewDeciderJudge(url string) llm.Decider {
 	if u == "" {
 		u = defaultJudgeURL
 	}
-	return &deciderJudge{
-		url:    u,
-		client: &http.Client{Timeout: 120 * time.Second},
-	}
+	client := &http.Client{Timeout: 120 * time.Second}
+	return &deciderJudge{url: u, client: client, llamaTokenizer: &llamaTokenizer{url: u, client: client}}
 }
 
 func (j *deciderJudge) available() bool {
@@ -86,34 +85,6 @@ type judgeCompletionResp struct {
 			Logprob float64 `json:"logprob"`
 		} `json:"top_logprobs"`
 	} `json:"completion_probabilities"`
-}
-
-func (j *deciderJudge) tokenize(text string) ([]int, error) {
-	reqBody, _ := json.Marshal(judgeTokenizeReq{
-		Content:    text,
-		AddSpecial: false,
-	})
-	httpReq, err := http.NewRequestWithContext(stdcontext.Background(), "POST", j.url+judgeTokenizePath, bytes.NewReader(reqBody))
-	if err != nil {
-		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := j.client.Do(httpReq)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("tokenize status: %d", resp.StatusCode)
-	}
-
-	var tokResp judgeTokenizeResp
-	if err := json.NewDecoder(resp.Body).Decode(&tokResp); err != nil {
-		return nil, err
-	}
-	return tokResp.Tokens, nil
 }
 
 func isYesNoOptions(options []string) bool {
@@ -189,14 +160,9 @@ func (j *deciderJudge) Decide(ctx *context.Context, q llm.Question) (llm.Decisio
 	promptIDs := append([]int(nil), tokens1...)
 	promptIDs = append(promptIDs, tokens2...)
 
-	letterTokenIDs := make([]int, numOpts)
-	for i := 0; i < numOpts; i++ {
-		letter := string(rune('A' + i))
-		toks, err := j.tokenize(letter)
-		if err != nil || len(toks) == 0 {
-			return llm.Decision{}, fmt.Errorf("tokenize letter %s failed: %w", letter, err)
-		}
-		letterTokenIDs[i] = toks[0]
+	letterTokenIDs, err := j.letterIDs(numOpts)
+	if err != nil {
+		return llm.Decision{}, err
 	}
 
 	compReq := judgeCompletionReq{

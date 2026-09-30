@@ -31,16 +31,17 @@ const (
 )
 
 type modelServer struct {
-	url    string
-	client *http.Client
-	seed   int // the sampling seed of one attempt: attempts differ, and a rerun repeats them
+	url     string
+	client  *http.Client
+	seed    int             // the sampling seed of one attempt: attempts differ, and a rerun repeats them
+	letters *llamaTokenizer // shared by every attempt's copy
 }
 
 // forAttempt is the same server sampled with the seed of attempt i. The sampling settings
 // (temperature, top-p, top-k) are the ones llama-server was started with, so they belong to
 // the model, not to this library.
 func (m *modelServer) forAttempt(i int) *modelServer {
-	return &modelServer{url: m.url, client: m.client, seed: i}
+	return &modelServer{url: m.url, client: m.client, seed: i, letters: m.letters}
 }
 
 func newModelServer(overrideURL string) *modelServer {
@@ -51,10 +52,8 @@ func newModelServer(overrideURL string) *modelServer {
 	if u == "" {
 		u = defaultModelURL
 	}
-	return &modelServer{
-		url:    u,
-		client: &http.Client{Timeout: 120 * time.Second},
-	}
+	client := &http.Client{Timeout: 120 * time.Second}
+	return &modelServer{url: u, client: client, letters: &llamaTokenizer{url: u, client: client}}
 }
 
 type llamaMessage struct {
@@ -116,7 +115,14 @@ type llamaPropsResponse struct {
 }
 
 type llamaApplyTemplateRequest struct {
-	Messages []llamaMessage `json:"messages"`
+	Messages           []llamaMessage     `json:"messages"`
+	ChatTemplateKwargs chatTemplateKwargs `json:"chat_template_kwargs"`
+}
+
+// chatTemplateKwargs turns thinking off, so the rendered prompt ends with the closed
+// "<think>\n\n</think>\n\n" and the option letter is the first token of the answer.
+type chatTemplateKwargs struct {
+	EnableThinking bool `json:"enable_thinking"`
 }
 
 type llamaApplyTemplateResponse struct {
@@ -313,34 +319,6 @@ func (m *modelServer) CountTokens(text string) int {
 	return len(tokResp.Tokens)
 }
 
-func (m *modelServer) tokenize(text string) ([]int, error) {
-	reqBody, _ := json.Marshal(judgeTokenizeReq{
-		Content:    text,
-		AddSpecial: false,
-	})
-	httpReq, err := http.NewRequestWithContext(stdcontext.Background(), "POST", m.url+llamaTokenizePath, bytes.NewReader(reqBody))
-	if err != nil {
-		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := m.client.Do(httpReq)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("tokenize status: %d", resp.StatusCode)
-	}
-
-	var tokResp judgeTokenizeResp
-	if err := json.NewDecoder(resp.Body).Decode(&tokResp); err != nil {
-		return nil, err
-	}
-	return tokResp.Tokens, nil
-}
-
 func formatCriticContent(q llm.Question) string {
 	var sb strings.Builder
 	sb.WriteString("Context:\n")
@@ -365,6 +343,7 @@ func (m *modelServer) Decide(ctx *context.Context, q llm.Question) (llm.Decision
 	applyReq := llamaApplyTemplateRequest{
 		Messages: []llamaMessage{{Role: "user", Content: content}},
 	}
+	// ChatTemplateKwargs.EnableThinking stays false: see chatTemplateKwargs.
 	bodyBytes, _ := json.Marshal(applyReq)
 
 	reqCtx := stdcontext.Background()
@@ -390,14 +369,9 @@ func (m *modelServer) Decide(ctx *context.Context, q llm.Question) (llm.Decision
 		return llm.Decision{}, fmt.Errorf("failed to decode apply-template response: %w", err)
 	}
 
-	letterTokenIDs := make([]int, numOpts)
-	for i := 0; i < numOpts; i++ {
-		letter := string(rune('A' + i))
-		toks, err := m.tokenize(letter)
-		if err != nil || len(toks) == 0 {
-			return llm.Decision{}, fmt.Errorf("tokenize letter %s failed: %w", letter, err)
-		}
-		letterTokenIDs[i] = toks[0]
+	letterTokenIDs, err := m.letters.letterIDs(numOpts)
+	if err != nil {
+		return llm.Decision{}, err
 	}
 
 	compReq := llamaCompletionReq{

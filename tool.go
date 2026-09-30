@@ -38,9 +38,9 @@ type fakeToolWrapper struct {
 	calls *[]ToolCall
 }
 
-func (f *fakeToolWrapper) Name() string        { return f.ft.Name }
-func (f *fakeToolWrapper) Description() string { return f.ft.Description }
-func (f *fakeToolWrapper) InputSchema() string { return f.ft.InputSchema }
+func (f *fakeToolWrapper) Name() string         { return f.ft.Name }
+func (f *fakeToolWrapper) Description() string  { return f.ft.Description }
+func (f *fakeToolWrapper) InputSchema() string  { return f.ft.InputSchema }
 func (f *fakeToolWrapper) Action() model.Action { return f.ft.Action }
 
 func (f *fakeToolWrapper) Execute(ctx *context.Context, inputJSON string) (string, error) {

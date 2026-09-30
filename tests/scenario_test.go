@@ -148,6 +148,13 @@ func TestScenarioExecutionWithFakeServer(t *testing.T) {
 			}
 			json.NewEncoder(w).Encode(resp)
 		case "/apply-template":
+			var body struct {
+				Kwargs map[string]any `json:"chat_template_kwargs"`
+			}
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			if v, ok := body.Kwargs["enable_thinking"]; !ok || v != false {
+				t.Errorf("the critic must render with enable_thinking=false, got %v", body.Kwargs)
+			}
 			resp := map[string]any{
 				"prompt": "<formatted prompt>",
 			}
@@ -287,6 +294,13 @@ func TestScenarioPendingCallWithFakeServer(t *testing.T) {
 			}
 			json.NewEncoder(w).Encode(resp)
 		case "/apply-template":
+			var body struct {
+				Kwargs map[string]any `json:"chat_template_kwargs"`
+			}
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			if v, ok := body.Kwargs["enable_thinking"]; !ok || v != false {
+				t.Errorf("the critic must render with enable_thinking=false, got %v", body.Kwargs)
+			}
 			resp := map[string]any{
 				"prompt": "<formatted prompt>",
 			}
