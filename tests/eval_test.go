@@ -22,7 +22,7 @@ func TestIntegration_ClinicHours(t *testing.T) {
 				Name:        "clinic_hours",
 				Description: "Opening hours of the clinic (horario de atención de la clínica) for each day of the week",
 				InputSchema: `{"type":"object","properties":{"day":{"type":"string","description":"day of the week"}}}`,
-				Action:      model.ActionRead,
+				Action:      model.Read,
 				Returns:     "Open Monday to Friday, 8:00 to 17:00. Closed on weekends.",
 			}},
 		},
@@ -35,23 +35,12 @@ func TestIntegration_ClinicHours(t *testing.T) {
 		Runs:    10,
 		MinPass: 1,
 	}.Run(t, func(env agenteval.Env) (*agent.Agent, error) {
-		cfg := agent.Config{
-			Identity: agentcontext.Identity{
-				Name:         "Recepcionista",
-				Role:         "Recepcionista de Clínica San Miguel",
-				Instructions: "Responde siempre en español, de forma concisa. Nunca inventes datos de la clínica (horarios, precios, citas): consíguelos siempre con una herramienta. Si no tienes la herramienta adecuada, llama primero a search_tools.",
-				Goals:        []string{"Informar horarios", "Gestionar citas"},
-			},
-			LLMs: agent.LLMConfig{
-				Primary: env.Model,
-			},
-			Tokens:     env.Tokens,
-			Budget:     env.Budget,
-			Clock:      env.Clock,
-			Memory:     env.Memory,
-			IDGen:      env.IDGen,
-			ToolIndex:  env.ToolIndex,
-			LocalTools: env.Tools,
+		cfg := env.Config()
+		cfg.Identity = agentcontext.Identity{
+			Name:         "Recepcionista",
+			Role:         "Recepcionista de Clínica San Miguel",
+			Instructions: "Responde siempre en español, de forma concisa. Nunca inventes datos de la clínica (horarios, precios, citas): consíguelos siempre con una herramienta. Si no tienes la herramienta adecuada, llama primero a search_tools.",
+			Goals:        []string{"Informar horarios", "Gestionar citas"},
 		}
 		return agent.New(cfg)
 	})

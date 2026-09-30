@@ -25,7 +25,7 @@ func TestHorarioDeHoy(t *testing.T) {
 				Name:        "list_business_hours",
 				Description: "Opening hours of the clinic for every day of the week.",
 				InputSchema: `{"type":"object","properties":{}}`,
-				Action:      model.ActionRead,
+				Action:      model.Read,
 				Returns:     "Monday to Friday 08:00-18:00. Saturday and Sunday closed.",
 			}},
 		},
@@ -35,6 +35,7 @@ func TestHorarioDeHoy(t *testing.T) {
 			agenteval.DoesNotModify(),
 			agenteval.Contains("18:00"),
 			agenteval.Faithful(),
+			agenteval.AsksNothingToConfirm(),
 		},
 		Runs: 10, MinPass: 9,
 	}.Run(t, jose.New)

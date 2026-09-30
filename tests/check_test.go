@@ -7,21 +7,23 @@ import (
 	"testing"
 
 	"webtyp.com/agenteval"
+	"webtyp.com/context"
+	"webtyp.com/llm"
 	"webtyp.com/model"
 )
 
 type mockJudge struct {
-	choice     string
-	confidence float64
-	err        error
+	choiceIndex int
+	confidence  float64
+	err         error
 }
 
-func (m mockJudge) Decide(state, question string, options []string, kind agenteval.QuestionKind) (agenteval.Decision, error) {
+func (m mockJudge) Decide(ctx *context.Context, q llm.Question) (llm.Decision, error) {
 	if m.err != nil {
-		return agenteval.Decision{}, m.err
+		return llm.Decision{}, m.err
 	}
-	return agenteval.Decision{
-		Choice:     m.choice,
+	return llm.Decision{
+		Choice:     m.choiceIndex,
 		Confidence: m.confidence,
 		Probs:      []float64{m.confidence, 1.0 - m.confidence},
 	}, nil
@@ -32,7 +34,7 @@ func TestDeterministicChecks(t *testing.T) {
 		Question: "Hola",
 		Answer:   "Atendemos hasta las 18:00.",
 		Calls: []agenteval.ToolCall{
-			{Name: "list_hours", Input: "{}", Output: "08:00-18:00", Action: model.ActionRead},
+			{Name: "list_hours", Input: "{}", Output: "08:00-18:00", Action: model.Read},
 		},
 	}
 
@@ -54,7 +56,7 @@ func TestDeterministicChecks(t *testing.T) {
 
 	attMut := att
 	attMut.Calls = []agenteval.ToolCall{
-		{Name: "create_appointment", Input: "{}", Output: "ok", Action: model.ActionCreate},
+		{Name: "create_appointment", Input: "{}", Output: "ok", Action: model.Create},
 	}
 	res = agenteval.DoesNotModify().Check(attMut, nil)
 	if res.Verdict != agenteval.Fail {
@@ -87,14 +89,14 @@ func TestJudgeChecks(t *testing.T) {
 		Question: "¿Hasta qué hora atienden?",
 		Answer:   "Atendemos hasta las 18:00.",
 		Calls: []agenteval.ToolCall{
-			{Name: "list_hours", Input: "{}", Output: "08:00-18:00", Action: model.ActionRead},
+			{Name: "list_hours", Input: "{}", Output: "08:00-18:00", Action: model.Read},
 		},
 	}
 
 	// Faithful Pass (0.80)
 	jPass := mockJudge{
-		choice:     "no, everything it says is supported by the tool result",
-		confidence: 0.80,
+		choiceIndex: 0,
+		confidence:  0.80,
 	}
 	res := agenteval.Faithful().Check(att, jPass)
 	if res.Verdict != agenteval.Pass {
@@ -103,8 +105,8 @@ func TestJudgeChecks(t *testing.T) {
 
 	// Faithful Unsure (0.79)
 	jUnsure := mockJudge{
-		choice:     "no, everything it says is supported by the tool result",
-		confidence: 0.79,
+		choiceIndex: 0,
+		confidence:  0.79,
 	}
 	res = agenteval.Faithful().Check(att, jUnsure)
 	if res.Verdict != agenteval.Unsure {
@@ -116,8 +118,8 @@ func TestJudgeChecks(t *testing.T) {
 
 	// Faithful Fail
 	jFail := mockJudge{
-		choice:     "yes, it states something the tool result does not support",
-		confidence: 0.95,
+		choiceIndex: 1,
+		confidence:  0.95,
 	}
 	res = agenteval.Faithful().Check(att, jFail)
 	if res.Verdict != agenteval.Fail {
@@ -126,8 +128,8 @@ func TestJudgeChecks(t *testing.T) {
 
 	// AnswersTheQuestion Pass
 	jAnswersPass := mockJudge{
-		choice:     "yes",
-		confidence: 0.85,
+		choiceIndex: 0,
+		confidence:  0.85,
 	}
 	res = agenteval.AnswersTheQuestion().Check(att, jAnswersPass)
 	if res.Verdict != agenteval.Pass {
@@ -136,8 +138,8 @@ func TestJudgeChecks(t *testing.T) {
 
 	// AnswersTheQuestion Fail
 	jAnswersFail := mockJudge{
-		choice:     "no",
-		confidence: 0.85,
+		choiceIndex: 1,
+		confidence:  0.85,
 	}
 	res = agenteval.AnswersTheQuestion().Check(att, jAnswersFail)
 	if res.Verdict != agenteval.Fail {

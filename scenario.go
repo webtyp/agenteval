@@ -47,6 +47,7 @@ type Builder func(Env) (*agent.Agent, error)
 // agent.Config unchanged and adds only its own identity and settings.
 type Env struct {
 	Model     llm.Client
+	Critic    llm.Decider
 	Tokens    llm.TokenCounter
 	Budget    agentcontext.Budget
 	Clock     agent.Clock
@@ -54,6 +55,28 @@ type Env struct {
 	IDGen     model.IDGenerator
 	ToolIndex agent.ToolIndex
 	Tools     []agent.Tool // the scenario's FakeTools; pass them as Config.LocalTools
+}
+
+// Config creates an agent.Config populated with the environment's resources.
+// A Builder can then add its identity:
+//
+//	cfg := env.Config()
+//	cfg.Identity = ...
+//	return agent.New(cfg)
+func (e Env) Config() agent.Config {
+	return agent.Config{
+		LLMs: agent.LLMConfig{
+			Primary: e.Model,
+		},
+		Critic:     e.Critic,
+		Tokens:     e.Tokens,
+		Budget:     e.Budget,
+		Clock:      e.Clock,
+		Memory:     e.Memory,
+		IDGen:      e.IDGen,
+		ToolIndex:  e.ToolIndex,
+		LocalTools: e.Tools,
+	}
 }
 
 // Validate returns validation errors for Scenario.
@@ -102,7 +125,7 @@ func (s Scenario) Run(t *testing.T, build Builder) {
 		t.Fatalf(errModelServerUnreachable, ms.url)
 	}
 
-	var judge Judge
+	var judge llm.Decider
 	needsJudge := false
 	for _, chk := range s.Then {
 		if requiresJudge(chk) {
@@ -157,6 +180,7 @@ func (s Scenario) Run(t *testing.T, build Builder) {
 		model := ms.forAttempt(i)
 		env := Env{
 			Model:     model,
+			Critic:    model,
 			Tokens:    model,
 			Budget:    budget,
 			Clock:     s.Given.At.clock(),
@@ -167,15 +191,16 @@ func (s Scenario) Run(t *testing.T, build Builder) {
 		}
 
 		a, err := build(env)
-		var ans string
+		var reply agent.Reply
 		if err == nil {
-			ans, err = a.Run(ctx, sessionID, s.When)
+			reply, err = a.Run(ctx, sessionID, s.When)
 		}
 
 		attempt := Attempt{
 			Question: s.When,
 			At:       s.Given.At,
-			Answer:   ans,
+			Answer:   reply.Text,
+			Pending:  reply.Pending,
 			Err:      err,
 			Calls:    recCalls,
 		}
@@ -187,7 +212,7 @@ func (s Scenario) Run(t *testing.T, build Builder) {
 			attemptPass = false
 			failedCount++
 			t.Logf("attempt %d: FAIL agent.Run failed: %v", i, err)
-			t.Logf("%s", ans)
+			t.Logf("%s", reply.Text)
 		} else {
 			for _, chk := range s.Then {
 				res := chk.Check(attempt, judge)
@@ -197,12 +222,12 @@ func (s Scenario) Run(t *testing.T, build Builder) {
 				case Fail:
 					attemptPass = false
 					t.Logf("attempt %d: FAIL %s: %s", i, chk.Name(), res.Reason)
-					t.Logf("%s", ans)
+					t.Logf("%s", reply.Text)
 				case Unsure:
 					attemptPass = false
 					attemptUnsure = true
 					t.Logf("attempt %d: UNSURE %s: %s", i, chk.Name(), res.Reason)
-					t.Logf("%s", ans)
+					t.Logf("%s", reply.Text)
 				}
 				if !attemptPass {
 					break
