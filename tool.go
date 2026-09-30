@@ -18,8 +18,8 @@ var (
 // agent sees exactly what it will see in production.
 type FakeTool struct {
 	Name, Description, InputSchema string
-	Action  byte   // required: model.ActionRead, ActionCreate, ActionUpdate or ActionDelete
-	Returns string // what the tool answers, whatever the arguments
+	Action                         byte   // required: model.ActionRead, ActionCreate, ActionUpdate or ActionDelete
+	Returns                        string // what the tool answers, whatever the arguments
 }
 
 // Validate validates the FakeTool specification.

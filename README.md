@@ -45,11 +45,17 @@ Para correr los escenarios se inician el modelo y el juez en `llama-server`:
 
 ```bash
 # Modelo bajo prueba
-llama-server -m <model.gguf> --port 8080 --jinja -c 4096 --reasoning-budget 0
+llama-server -m <model.gguf> --port 8080 --jinja -c 4096 --reasoning-budget 0 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0
 
 # Juez
 llama-server -m decider-4b-v2.1-Q4_K_M.gguf --port 8090 -np 1 -c 4096 -ngl 99
 ```
+
+Los parámetros de muestreo (`--temp`, `--top-p`, `--top-k`, `--min-p`) son los que Qwen3.5
+recomienda para responder sin razonamiento; otro modelo usa los suyos. **No se usa temperatura
+0:** con 0, los N intentos serían el mismo intento repetido y la tasa de éxito no mediría nada.
+Cada intento usa su propia semilla (1, 2, …), así que los intentos varían entre sí y repetir la
+suite completa da el mismo resultado.
 
 ## Cómo se decide si un intento aprobó
 

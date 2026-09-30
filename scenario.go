@@ -19,8 +19,8 @@ const DefaultRuns = 10
 
 var (
 	ErrGivenAtRequired   = errors.New("agenteval: Given.At is required")
-	ErrMinPassRequired  = errors.New("agenteval: MinPass is required (1..Runs)")
-	ErrWhenRequired     = errors.New("agenteval: When is required")
+	ErrMinPassRequired   = errors.New("agenteval: MinPass is required (1..Runs)")
+	ErrWhenRequired      = errors.New("agenteval: When is required")
 	ErrThenCheckRequired = errors.New("agenteval: Then needs at least one check")
 )
 
@@ -154,9 +154,10 @@ func (s Scenario) Run(t *testing.T, build Builder) {
 			t.Fatalf("toolIdx.IndexTools failed: %v", err)
 		}
 
+		model := ms.forAttempt(i)
 		env := Env{
-			Model:     ms,
-			Tokens:    ms,
+			Model:     model,
+			Tokens:    model,
 			Budget:    budget,
 			Clock:     s.Given.At.clock(),
 			Memory:    mem,

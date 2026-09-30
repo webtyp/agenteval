@@ -15,13 +15,13 @@ import (
 )
 
 const (
-	defaultJudgeURL       = "http://127.0.0.1:8090"
-	envJudgeURL           = "AGENTEVAL_JUDGE_URL"
-	judgeCompletionPath   = "/completion"
-	judgeTokenizePath     = "/tokenize"
-	judgeHealthPath       = "/health"
-	MinConfidence         = 0.8
-	errJudgeUnreachable   = "agenteval: no judge at %s; start it with: llama-server -m ~/Dev/LMmodels/Mapika/decider-4b-GGUF/decider-4b-v2.1-Q4_K_M.gguf --port 8090 -np 1 -c 4096 -ngl 99 (or set AGENTEVAL_JUDGE_URL)"
+	defaultJudgeURL     = "http://127.0.0.1:8090"
+	envJudgeURL         = "AGENTEVAL_JUDGE_URL"
+	judgeCompletionPath = "/completion"
+	judgeTokenizePath   = "/tokenize"
+	judgeHealthPath     = "/health"
+	MinConfidence       = 0.8
+	errJudgeUnreachable = "agenteval: no judge at %s; start it with: llama-server -m ~/Dev/LMmodels/Mapika/decider-4b-GGUF/decider-4b-v2.1-Q4_K_M.gguf --port 8090 -np 1 -c 4096 -ngl 99 (or set AGENTEVAL_JUDGE_URL)"
 )
 
 // Judge answers a closed question about a text with a probability for every option.
@@ -81,11 +81,11 @@ type judgeTokenizeResp struct {
 }
 
 type judgeCompletionReq struct {
-	Prompt             []int   `json:"prompt"`
-	NPredict           int     `json:"n_predict"`
-	NProbs             int     `json:"n_probs"`
-	Temperature        float64 `json:"temperature"`
-	CachePrompt        bool    `json:"cache_prompt"`
+	Prompt            []int   `json:"prompt"`
+	NPredict          int     `json:"n_predict"`
+	NProbs            int     `json:"n_probs"`
+	Temperature       float64 `json:"temperature"`
+	CachePrompt       bool    `json:"cache_prompt"`
 	PostSamplingProbs bool    `json:"post_sampling_probs"`
 }
 
@@ -164,11 +164,11 @@ func (j *deciderJudge) Decide(state, question string, options []string, kind Que
 	}
 
 	compReq := judgeCompletionReq{
-		Prompt:             promptIDs,
-		NPredict:           1,
-		NProbs:             64,
-		Temperature:        0,
-		CachePrompt:        false,
+		Prompt:            promptIDs,
+		NPredict:          1,
+		NProbs:            64,
+		Temperature:       0,
+		CachePrompt:       false,
 		PostSamplingProbs: false,
 	}
 
@@ -274,7 +274,7 @@ func Faithful() Check {
 
 type faithfulCheck struct{}
 
-func (c faithfulCheck) Name() string { return "Faithful()" }
+func (c faithfulCheck) Name() string     { return "Faithful()" }
 func (c faithfulCheck) NeedsJudge() bool { return true }
 
 func (c faithfulCheck) Check(a Attempt, j Judge) Result {
@@ -313,7 +313,7 @@ func AnswersTheQuestion() Check {
 
 type answersTheQuestionCheck struct{}
 
-func (c answersTheQuestionCheck) Name() string { return "AnswersTheQuestion()" }
+func (c answersTheQuestionCheck) Name() string     { return "AnswersTheQuestion()" }
 func (c answersTheQuestionCheck) NeedsJudge() bool { return true }
 
 func (c answersTheQuestionCheck) Check(a Attempt, j Judge) Result {

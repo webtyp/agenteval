@@ -11,7 +11,7 @@ import (
 
 // Attempt is what happened in one run of a scenario.
 type Attempt struct {
-	Question string     // Scenario.When
+	Question string // Scenario.When
 	At       Moment
 	Answer   string     // what agent.Run returned
 	Err      error      // what agent.Run returned

@@ -24,12 +24,20 @@ const (
 	llamaTokenizePath         = "/tokenize"
 	llamaPropsPath            = "/props"
 	DefaultOutputTokens       = 512
-	errModelServerUnreachable = "agenteval: no model server at %s; start one with: llama-server -m <model.gguf> --port 8080 --jinja -c 4096 --reasoning-budget 0 (or set AGENTEVAL_MODEL_URL)"
+	errModelServerUnreachable = "agenteval: no model server at %s; start one with: llama-server -m <model.gguf> --port 8080 --jinja -c 4096 --reasoning-budget 0 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0 (or set AGENTEVAL_MODEL_URL)"
 )
 
 type modelServer struct {
 	url    string
 	client *http.Client
+	seed   int // the sampling seed of one attempt: attempts differ, and a rerun repeats them
+}
+
+// forAttempt is the same server sampled with the seed of attempt i. The sampling settings
+// (temperature, top-p, top-k) are the ones llama-server was started with, so they belong to
+// the model, not to this library.
+func (m *modelServer) forAttempt(i int) *modelServer {
+	return &modelServer{url: m.url, client: m.client, seed: i}
 }
 
 func newModelServer(overrideURL string) *modelServer {
@@ -72,11 +80,11 @@ type llamaToolDef struct {
 }
 
 type llamaChatRequest struct {
-	Messages    []llamaMessage `json:"messages"`
-	Tools       []llamaToolDef `json:"tools,omitempty"`
-	MaxTokens   int            `json:"max_tokens,omitempty"`
-	Stream      bool           `json:"stream"`
-	Temperature float64        `json:"temperature"`
+	Messages  []llamaMessage `json:"messages"`
+	Tools     []llamaToolDef `json:"tools,omitempty"`
+	MaxTokens int            `json:"max_tokens,omitempty"`
+	Stream    bool           `json:"stream"`
+	Seed      int            `json:"seed"`
 }
 
 type llamaChatResponse struct {
@@ -186,11 +194,11 @@ func (m *modelServer) Generate(ctx *context.Context, req llm.Request) (llm.Respo
 	}
 
 	bodyObj := llamaChatRequest{
-		Messages:    messages,
-		Tools:       tools,
-		MaxTokens:   req.MaxOutputTokens,
-		Stream:      false,
-		Temperature: 0,
+		Messages:  messages,
+		Tools:     tools,
+		MaxTokens: req.MaxOutputTokens,
+		Stream:    false,
+		Seed:      m.seed,
 	}
 
 	bodyBytes, _ := json.Marshal(bodyObj)
