@@ -1,0 +1,162 @@
+[
+ {
+  "name": "parafrasis_6pm",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 6 de la tarde.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "no, everything it says is supported by the tool result",
+   "yes, it states something the tool result does not support"
+  ],
+  "expect": "no, everything it says is supported by the tool result"
+ },
+ {
+  "name": "parafrasis_6pm_rev",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 6 de la tarde.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "yes, it states something the tool result does not support",
+   "no, everything it says is supported by the tool result"
+  ],
+  "expect": "no, everything it says is supported by the tool result"
+ },
+ {
+  "name": "parafrasis_18hrs",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hasta las 18 hrs.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "no, everything it says is supported by the tool result",
+   "yes, it states something the tool result does not support"
+  ],
+  "expect": "no, everything it says is supported by the tool result"
+ },
+ {
+  "name": "parafrasis_18hrs_rev",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hasta las 18 hrs.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "yes, it states something the tool result does not support",
+   "no, everything it says is supported by the tool result"
+  ],
+  "expect": "no, everything it says is supported by the tool result"
+ },
+ {
+  "name": "sabado_dice_abierto",
+  "state": "Today is Saturday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 18:00.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "no, everything it says is supported by the tool result",
+   "yes, it states something the tool result does not support"
+  ],
+  "expect": "yes, it states something the tool result does not support"
+ },
+ {
+  "name": "sabado_dice_abierto_rev",
+  "state": "Today is Saturday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 18:00.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "yes, it states something the tool result does not support",
+   "no, everything it says is supported by the tool result"
+  ],
+  "expect": "yes, it states something the tool result does not support"
+ },
+ {
+  "name": "sabado_dice_cerrado",
+  "state": "Today is Saturday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy sábado estamos cerrados; el lunes abrimos a las 08:00.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "no, everything it says is supported by the tool result",
+   "yes, it states something the tool result does not support"
+  ],
+  "expect": "no, everything it says is supported by the tool result"
+ },
+ {
+  "name": "sabado_dice_cerrado_rev",
+  "state": "Today is Saturday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy sábado estamos cerrados; el lunes abrimos a las 08:00.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "yes, it states something the tool result does not support",
+   "no, everything it says is supported by the tool result"
+  ],
+  "expect": "no, everything it says is supported by the tool result"
+ },
+ {
+  "name": "extra_whatsapp",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 18:00. También puedes reservar por WhatsApp.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "no, everything it says is supported by the tool result",
+   "yes, it states something the tool result does not support"
+  ],
+  "expect": "yes, it states something the tool result does not support"
+ },
+ {
+  "name": "extra_whatsapp_rev",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 18:00. También puedes reservar por WhatsApp.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "yes, it states something the tool result does not support",
+   "no, everything it says is supported by the tool result"
+  ],
+  "expect": "yes, it states something the tool result does not support"
+ },
+ {
+  "name": "extra_doctor",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 18:00 y la doctora Pérez está disponible.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "no, everything it says is supported by the tool result",
+   "yes, it states something the tool result does not support"
+  ],
+  "expect": "yes, it states something the tool result does not support"
+ },
+ {
+  "name": "extra_doctor_rev",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 18:00 y la doctora Pérez está disponible.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "yes, it states something the tool result does not support",
+   "no, everything it says is supported by the tool result"
+  ],
+  "expect": "yes, it states something the tool result does not support"
+ },
+ {
+  "name": "omite_pero_fiel",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Atendemos de lunes a viernes.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "no, everything it says is supported by the tool result",
+   "yes, it states something the tool result does not support"
+  ],
+  "expect": "no, everything it says is supported by the tool result"
+ },
+ {
+  "name": "omite_pero_fiel_rev",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Atendemos de lunes a viernes.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "yes, it states something the tool result does not support",
+   "no, everything it says is supported by the tool result"
+  ],
+  "expect": "no, everything it says is supported by the tool result"
+ },
+ {
+  "name": "apertura_mal",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos de 09:00 a 18:00.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "no, everything it says is supported by the tool result",
+   "yes, it states something the tool result does not support"
+  ],
+  "expect": "yes, it states something the tool result does not support"
+ },
+ {
+  "name": "apertura_mal_rev",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos de 09:00 a 18:00.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "yes, it states something the tool result does not support",
+   "no, everything it says is supported by the tool result"
+  ],
+  "expect": "yes, it states something the tool result does not support"
+ }
+]

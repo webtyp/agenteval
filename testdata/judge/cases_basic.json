@@ -1,0 +1,210 @@
+[
+ {
+  "name": "readme_billing",
+  "state": "My card was charged twice for the same purchase.",
+  "question": "Which department should handle this?",
+  "options": [
+   "billing",
+   "technical",
+   "sales"
+  ],
+  "expect": "billing"
+ },
+ {
+  "name": "fiel_en_correcta",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy martes atendemos hasta las 18:00.",
+  "question": "Does the assistant's answer contain any information that is not supported by the tool result?",
+  "options": [
+   "no, everything it says is supported by the tool result",
+   "yes, it states something the tool result does not support"
+  ],
+  "expect": "no, everything it says is supported by the tool result"
+ },
+ {
+  "name": "fiel_en_hora_inventada",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 20:00.",
+  "question": "Does the assistant's answer contain any information that is not supported by the tool result?",
+  "options": [
+   "no, everything it says is supported by the tool result",
+   "yes, it states something the tool result does not support"
+  ],
+  "expect": "yes, it states something the tool result does not support"
+ },
+ {
+  "name": "fiel_en_sabado_inventado",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 18:00, y los sábados de 9:00 a 13:00.",
+  "question": "Does the assistant's answer contain any information that is not supported by the tool result?",
+  "options": [
+   "no, everything it says is supported by the tool result",
+   "yes, it states something the tool result does not support"
+  ],
+  "expect": "yes, it states something the tool result does not support"
+ },
+ {
+  "name": "fiel_en_calida",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: ¡Hola! Hoy martes atendemos hasta las 18:00. ¿Te ayudo con algo más?",
+  "question": "Does the assistant's answer contain any information that is not supported by the tool result?",
+  "options": [
+   "no, everything it says is supported by the tool result",
+   "yes, it states something the tool result does not support"
+  ],
+  "expect": "no, everything it says is supported by the tool result"
+ },
+ {
+  "name": "fiel_en_invertida",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy martes el consultorio está cerrado.",
+  "question": "Does the assistant's answer contain any information that is not supported by the tool result?",
+  "options": [
+   "no, everything it says is supported by the tool result",
+   "yes, it states something the tool result does not support"
+  ],
+  "expect": "yes, it states something the tool result does not support"
+ },
+ {
+  "name": "fiel_es_correcta",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy martes atendemos hasta las 18:00.",
+  "question": "¿La respuesta del asistente contiene información que no está respaldada por el resultado de la herramienta?",
+  "options": [
+   "no, todo lo que dice está respaldado",
+   "sí, afirma algo que el resultado no respalda"
+  ],
+  "expect": "no, todo lo que dice está respaldado"
+ },
+ {
+  "name": "fiel_es_hora_inventada",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 20:00.",
+  "question": "¿La respuesta del asistente contiene información que no está respaldada por el resultado de la herramienta?",
+  "options": [
+   "no, todo lo que dice está respaldado",
+   "sí, afirma algo que el resultado no respalda"
+  ],
+  "expect": "sí, afirma algo que el resultado no respalda"
+ },
+ {
+  "name": "fiel_es_sabado_inventado",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 18:00, y los sábados de 9:00 a 13:00.",
+  "question": "¿La respuesta del asistente contiene información que no está respaldada por el resultado de la herramienta?",
+  "options": [
+   "no, todo lo que dice está respaldado",
+   "sí, afirma algo que el resultado no respalda"
+  ],
+  "expect": "sí, afirma algo que el resultado no respalda"
+ },
+ {
+  "name": "fiel_es_calida",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: ¡Hola! Hoy martes atendemos hasta las 18:00. ¿Te ayudo con algo más?",
+  "question": "¿La respuesta del asistente contiene información que no está respaldada por el resultado de la herramienta?",
+  "options": [
+   "no, todo lo que dice está respaldado",
+   "sí, afirma algo que el resultado no respalda"
+  ],
+  "expect": "no, todo lo que dice está respaldado"
+ },
+ {
+  "name": "fiel_es_invertida",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy martes el consultorio está cerrado.",
+  "question": "¿La respuesta del asistente contiene información que no está respaldada por el resultado de la herramienta?",
+  "options": [
+   "no, todo lo que dice está respaldado",
+   "sí, afirma algo que el resultado no respalda"
+  ],
+  "expect": "sí, afirma algo que el resultado no respalda"
+ },
+ {
+  "name": "responde_si",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy martes atendemos hasta las 18:00.",
+  "question": "Does the assistant's answer actually answer the staff member's question?",
+  "options": [
+   "yes",
+   "no"
+  ],
+  "expect": "yes"
+ },
+ {
+  "name": "responde_no",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Tenemos tres boxes disponibles para atención.",
+  "question": "Does the assistant's answer actually answer the staff member's question?",
+  "options": [
+   "yes",
+   "no"
+  ],
+  "expect": "no"
+ },
+ {
+  "name": "idioma_es",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy martes atendemos hasta las 18:00.",
+  "question": "In which language is the assistant's answer written?",
+  "options": [
+   "Spanish",
+   "English",
+   "Portuguese"
+  ],
+  "expect": "Spanish"
+ },
+ {
+  "name": "idioma_en",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Today, Tuesday, we are open until 6 pm.",
+  "question": "In which language is the assistant's answer written?",
+  "options": [
+   "Spanish",
+   "English",
+   "Portuguese"
+  ],
+  "expect": "English"
+ },
+ {
+  "name": "noul_en_correcta",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy martes atendemos hasta las 18:00.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "no",
+   "yes"
+  ],
+  "expect": "no",
+  "T": 1.56
+ },
+ {
+  "name": "noul_en_hora_inventada",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 20:00.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "no",
+   "yes"
+  ],
+  "expect": "yes",
+  "T": 1.56
+ },
+ {
+  "name": "noul_en_sabado_inventado",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy atendemos hasta las 18:00, y los sábados de 9:00 a 13:00.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "no",
+   "yes"
+  ],
+  "expect": "yes",
+  "T": 1.56
+ },
+ {
+  "name": "noul_en_calida",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: ¡Hola! Hoy martes atendemos hasta las 18:00. ¿Te ayudo con algo más?",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "no",
+   "yes"
+  ],
+  "expect": "no",
+  "T": 1.56
+ },
+ {
+  "name": "noul_en_invertida",
+  "state": "Today is Tuesday.\nStaff member asked: ¿Hasta qué hora atendemos hoy?\nTool list_business_hours returned: Monday to Friday 08:00-18:00. Saturday and Sunday closed.\nAssistant answered: Hoy martes el consultorio está cerrado.",
+  "question": "Does the assistant's answer state anything that the tool result does not support?",
+  "options": [
+   "no",
+   "yes"
+  ],
+  "expect": "yes",
+  "T": 1.56
+ }
+]
