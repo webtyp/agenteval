@@ -4,7 +4,6 @@ package tests
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,7 +22,7 @@ func TestScenarioValidation(t *testing.T) {
 				Name:        "list_business_hours",
 				Description: "Hours",
 				InputSchema: `{"type":"object"}`,
-				Action:      model.ActionRead,
+				Action:      model.Read,
 				Returns:     "08:00-18:00",
 			},
 		},
@@ -96,7 +95,7 @@ func TestScenarioValidation(t *testing.T) {
 				Given: agenteval.Given{
 					At: validGiven.At,
 					Tools: []agenteval.FakeTool{
-						{Name: "", Action: model.ActionRead},
+						{Name: "", Action: model.Read},
 					},
 				},
 				When:    "test",
@@ -120,7 +119,7 @@ func TestScenarioValidation(t *testing.T) {
 				Runs:    10,
 				MinPass: 9,
 			},
-			wantErr: `agenteval: FakeTool "tool1" needs an Action (model.ActionRead, ActionCreate, ActionUpdate or ActionDelete)`,
+			wantErr: `agenteval: FakeTool "tool1" needs an Action (model.Read, model.Create, model.Update, model.Delete or a combination)`,
 		},
 	}
 
@@ -148,31 +147,28 @@ func TestScenarioExecutionWithFakeServer(t *testing.T) {
 				},
 			}
 			json.NewEncoder(w).Encode(resp)
+		case "/apply-template":
+			resp := map[string]any{
+				"prompt": "<formatted prompt>",
+			}
+			json.NewEncoder(w).Encode(resp)
 		case "/tokenize":
 			resp := map[string]any{
-				"tokens": []int{1, 2, 3},
+				"tokens": []int{1},
+			}
+			json.NewEncoder(w).Encode(resp)
+		case "/completion":
+			resp := map[string]any{
+				"completion_probabilities": []map[string]any{
+					{
+						"top_logprobs": []map[string]any{
+							{"id": 1, "logprob": 0.0},
+						},
+					},
+				},
 			}
 			json.NewEncoder(w).Encode(resp)
 		case "/v1/chat/completions":
-			body, _ := io.ReadAll(r.Body)
-			bodyStr := string(body)
-
-			if bytesContains(bodyStr, "critic") {
-				resp := map[string]any{
-					"choices": []map[string]any{
-						{
-							"message": map[string]any{
-								"content": "SUFFICIENT",
-							},
-							"finish_reason": "stop",
-						},
-					},
-					"usage": map[string]any{"prompt_tokens": 10, "completion_tokens": 5},
-				}
-				json.NewEncoder(w).Encode(resp)
-				return
-			}
-
 			callCount++
 			switch callCount {
 			case 1:
@@ -252,7 +248,7 @@ func TestScenarioExecutionWithFakeServer(t *testing.T) {
 					Name:        "list_business_hours",
 					Description: "Opening hours of the clinic for every day of the week.",
 					InputSchema: `{"type":"object","properties":{}}`,
-					Action:      model.ActionRead,
+					Action:      model.Read,
 					Returns:     "Monday to Friday 08:00-18:00.",
 				},
 			},
@@ -262,28 +258,142 @@ func TestScenarioExecutionWithFakeServer(t *testing.T) {
 			agenteval.Calls("list_business_hours"),
 			agenteval.DoesNotModify(),
 			agenteval.Contains("18:00"),
+			agenteval.AsksNothingToConfirm(),
 		},
 		Runs:    1,
 		MinPass: 1,
 	}
 
 	scen.Run(t, func(env agenteval.Env) (*agent.Agent, error) {
-		cfg := agent.Config{
-			Identity: agentcontext.Identity{
-				Name:         "Jose",
-				Role:         "Recepcionista",
-				Instructions: "Responde de forma concisa.",
+		cfg := env.Config()
+		cfg.Identity = agentcontext.Identity{
+			Name:         "Jose",
+			Role:         "Recepcionista",
+			Instructions: "Responde de forma concisa.",
+		}
+		return agent.New(cfg)
+	})
+}
+
+func TestScenarioPendingCallWithFakeServer(t *testing.T) {
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/props":
+			resp := map[string]any{
+				"default_generation_settings": map[string]any{
+					"n_ctx": 4096,
+				},
+			}
+			json.NewEncoder(w).Encode(resp)
+		case "/apply-template":
+			resp := map[string]any{
+				"prompt": "<formatted prompt>",
+			}
+			json.NewEncoder(w).Encode(resp)
+		case "/tokenize":
+			resp := map[string]any{
+				"tokens": []int{1},
+			}
+			json.NewEncoder(w).Encode(resp)
+		case "/completion":
+			resp := map[string]any{
+				"completion_probabilities": []map[string]any{
+					{
+						"top_logprobs": []map[string]any{
+							{"id": 1, "logprob": 0.0},
+						},
+					},
+				},
+			}
+			json.NewEncoder(w).Encode(resp)
+		case "/v1/chat/completions":
+			callCount++
+			switch callCount {
+			case 1:
+				// Step 1: Call search_tools to discover create_appointment
+				resp := map[string]any{
+					"choices": []map[string]any{
+						{
+							"message": map[string]any{
+								"tool_calls": []map[string]any{
+									{
+										"id":   "call_search",
+										"type": "function",
+										"function": map[string]any{
+											"name":      "search_tools",
+											"arguments": `{"query":"appointment"}`,
+										},
+									},
+								},
+							},
+							"finish_reason": "tool_calls",
+						},
+					},
+					"usage": map[string]any{"prompt_tokens": 10, "completion_tokens": 5},
+				}
+				json.NewEncoder(w).Encode(resp)
+			default:
+				// Step 2: Model calls create_appointment tool (Action: Create)
+				resp := map[string]any{
+					"choices": []map[string]any{
+						{
+							"message": map[string]any{
+								"content": "A continuación agendaré tu cita.",
+								"tool_calls": []map[string]any{
+									{
+										"id":   "call_create",
+										"type": "function",
+										"function": map[string]any{
+											"name":      "create_appointment",
+											"arguments": `{"time":"10:00"}`,
+										},
+									},
+								},
+							},
+							"finish_reason": "tool_calls",
+						},
+					},
+					"usage": map[string]any{"prompt_tokens": 15, "completion_tokens": 5},
+				}
+				json.NewEncoder(w).Encode(resp)
+			}
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	t.Setenv("AGENTEVAL_MODEL_URL", server.URL)
+
+	scen := agenteval.Scenario{
+		Given: agenteval.Given{
+			At: agenteval.Moment{Year: 2026, Month: 9, Day: 29, Hour: 10, UTCOffsetMinutes: -180},
+			Tools: []agenteval.FakeTool{
+				{
+					Name:        "create_appointment",
+					Description: "Create a new clinic appointment.",
+					InputSchema: `{"type":"object","properties":{"time":{"type":"string"}}}`,
+					Action:      model.Create,
+					Returns:     "appointment created",
+				},
 			},
-			LLMs: agent.LLMConfig{
-				Primary: env.Model,
-			},
-			Tokens:     env.Tokens,
-			Budget:     env.Budget,
-			Clock:      env.Clock,
-			Memory:     env.Memory,
-			IDGen:      env.IDGen,
-			ToolIndex:  env.ToolIndex,
-			LocalTools: env.Tools,
+		},
+		When: "Quiero agendar una cita para las 10:00",
+		Then: []agenteval.Check{
+			agenteval.AsksToConfirm("create_appointment"),
+			agenteval.DoesNotModify(),
+		},
+		Runs:    1,
+		MinPass: 1,
+	}
+
+	scen.Run(t, func(env agenteval.Env) (*agent.Agent, error) {
+		cfg := env.Config()
+		cfg.Identity = agentcontext.Identity{
+			Name:         "Jose",
+			Role:         "Recepcionista",
+			Instructions: "Agenda citas.",
 		}
 		return agent.New(cfg)
 	})

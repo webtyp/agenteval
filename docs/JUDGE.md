@@ -94,6 +94,8 @@ z_i = logprob(letra_i) / T
 p_i = exp(z_i) / Σ exp(z_j)       (solo sobre las letras de las opciones)
 ```
 
+`agenteval` implementa la interfaz `llm.Decider` de `webtyp.com/llm`.
+
 | Tipo de pregunta | Opciones | T |
 |---|---|---|
 | elección | las que escribas | 1,11 |

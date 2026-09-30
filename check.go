@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"webtyp.com/llm"
 	"webtyp.com/model"
 )
 
@@ -13,20 +14,21 @@ import (
 type Attempt struct {
 	Question string // Scenario.When
 	At       Moment
-	Answer   string     // what agent.Run returned
-	Err      error      // what agent.Run returned
-	Calls    []ToolCall // every tool call, in order
+	Answer   string         // what agent.Run returned (reply.Text)
+	Pending  []llm.ToolCall // what the agent asked the person to confirm; not executed
+	Err      error          // what agent.Run returned
+	Calls    []ToolCall     // every tool call, in order
 }
 
 type ToolCall struct {
 	Name, Input, Output string
-	Action              byte
+	Action              model.Action
 }
 
 // Check judges one attempt.
 type Check interface {
 	Name() string // how the check reads in the report, e.g. `Contains("18:00")`
-	Check(a Attempt, j Judge) Result
+	Check(a Attempt, j llm.Decider) Result
 }
 
 type Result struct {
@@ -55,7 +57,7 @@ func (c callsCheck) Name() string {
 	return fmt.Sprintf("Calls(%q)", c.name)
 }
 
-func (c callsCheck) Check(a Attempt, j Judge) Result {
+func (c callsCheck) Check(a Attempt, j llm.Decider) Result {
 	for _, call := range a.Calls {
 		if call.Name == c.name {
 			return Result{Verdict: Pass, Reason: fmt.Sprintf("tool %q was called", c.name)}
@@ -64,7 +66,7 @@ func (c callsCheck) Check(a Attempt, j Judge) Result {
 	return Result{Verdict: Fail, Reason: fmt.Sprintf("tool %q was not called", c.name)}
 }
 
-// DoesNotModify checks that every tool call has Action == model.ActionRead.
+// DoesNotModify checks that every tool call has Action == model.Read.
 func DoesNotModify() Check {
 	return doesNotModifyCheck{}
 }
@@ -75,9 +77,9 @@ func (c doesNotModifyCheck) Name() string {
 	return "DoesNotModify()"
 }
 
-func (c doesNotModifyCheck) Check(a Attempt, j Judge) Result {
+func (c doesNotModifyCheck) Check(a Attempt, j llm.Decider) Result {
 	for _, call := range a.Calls {
-		if call.Action != model.ActionRead {
+		if call.Action != model.Read {
 			return Result{
 				Verdict: Fail,
 				Reason:  fmt.Sprintf("tool %q modified state (action %d)", call.Name, call.Action),
@@ -100,7 +102,7 @@ func (c containsCheck) Name() string {
 	return fmt.Sprintf("Contains(%q)", c.text)
 }
 
-func (c containsCheck) Check(a Attempt, j Judge) Result {
+func (c containsCheck) Check(a Attempt, j llm.Decider) Result {
 	if strings.Contains(a.Answer, c.text) {
 		return Result{Verdict: Pass, Reason: fmt.Sprintf("the answer contains %q", c.text)}
 	}
@@ -120,9 +122,56 @@ func (c notContainsCheck) Name() string {
 	return fmt.Sprintf("NotContains(%q)", c.text)
 }
 
-func (c notContainsCheck) Check(a Attempt, j Judge) Result {
+func (c notContainsCheck) Check(a Attempt, j llm.Decider) Result {
 	if !strings.Contains(a.Answer, c.text) {
 		return Result{Verdict: Pass, Reason: fmt.Sprintf("the answer does not contain %q", c.text)}
 	}
 	return Result{Verdict: Fail, Reason: fmt.Sprintf("the answer contains %q", c.text)}
+}
+
+// AsksToConfirm checks that some pending tool call has the given name.
+func AsksToConfirm(name string) Check {
+	return asksToConfirmCheck{name: name}
+}
+
+type asksToConfirmCheck struct {
+	name string
+}
+
+func (c asksToConfirmCheck) Name() string {
+	return fmt.Sprintf("AsksToConfirm(%q)", c.name)
+}
+
+func (c asksToConfirmCheck) Check(a Attempt, j llm.Decider) Result {
+	for _, p := range a.Pending {
+		if p.Name == c.name {
+			return Result{Verdict: Pass, Reason: fmt.Sprintf("the agent asked to confirm %q", c.name)}
+		}
+	}
+	return Result{Verdict: Fail, Reason: fmt.Sprintf("the agent did not ask to confirm %q", c.name)}
+}
+
+// AsksNothingToConfirm checks that Pending is empty.
+func AsksNothingToConfirm() Check {
+	return asksNothingToConfirmCheck{}
+}
+
+type asksNothingToConfirmCheck struct{}
+
+func (c asksNothingToConfirmCheck) Name() string {
+	return "AsksNothingToConfirm()"
+}
+
+func (c asksNothingToConfirmCheck) Check(a Attempt, j llm.Decider) Result {
+	if len(a.Pending) == 0 {
+		return Result{Verdict: Pass, Reason: "the agent asked nothing to confirm"}
+	}
+	var names []string
+	for _, p := range a.Pending {
+		names = append(names, p.Name)
+	}
+	return Result{
+		Verdict: Fail,
+		Reason:  fmt.Sprintf("the agent asked to confirm: %s", strings.Join(names, ", ")),
+	}
 }

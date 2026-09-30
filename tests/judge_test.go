@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"webtyp.com/agenteval"
+	"webtyp.com/llm"
 )
 
 type recordedFile struct {
@@ -103,12 +104,13 @@ func TestDeciderJudgeRecordedCases(t *testing.T) {
 		}))
 
 		judge := agenteval.NewDeciderJudge(server.URL)
-		kind := agenteval.Choice
-		if c.Case.T == 1.56 {
-			kind = agenteval.YesNo
+		q := llm.Question{
+			Context: c.Case.State,
+			Text:    c.Case.Question,
+			Options: c.Case.Options,
 		}
 
-		dec, err := judge.Decide(c.Case.State, c.Case.Question, c.Case.Options, kind)
+		dec, err := judge.Decide(nil, q)
 		server.Close()
 
 		if err != nil {
@@ -116,8 +118,9 @@ func TestDeciderJudgeRecordedCases(t *testing.T) {
 			continue
 		}
 
-		if dec.Choice != c.Result.Choice {
-			t.Errorf("case %d (%s): Choice = %q, want %q", i, c.Case.Name, dec.Choice, c.Result.Choice)
+		gotChoiceOption := c.Case.Options[dec.Choice]
+		if gotChoiceOption != c.Result.Choice {
+			t.Errorf("case %d (%s): Choice = %q (%d), want %q", i, c.Case.Name, gotChoiceOption, dec.Choice, c.Result.Choice)
 		}
 
 		for optIdx, optName := range c.Case.Options {
