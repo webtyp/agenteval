@@ -3,7 +3,7 @@ module webtyp.com/agenteval
 go 1.26.8
 
 require (
-	webtyp.com/agent v0.8.1
+	webtyp.com/agent v0.9.2
 	webtyp.com/agentcontext v0.3.0
 	webtyp.com/context v0.0.23
 	webtyp.com/llm v0.2.0
