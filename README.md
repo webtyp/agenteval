@@ -5,7 +5,7 @@
 siempre igual, así que un test de pasa/no pasa no alcanza. Cada escenario, escrito en Go, se corre N
 veces contra un modelo local, y el resultado es una **tasa de éxito**.
 
-Lo vas a usar cuando cambies el prompt de un agente (por ejemplo, Jose en `veltylabs/mjosefa-jose`),
+Lo vas a usar cuando cambies el prompt de un agente (por ejemplo, Cote en `veltylabs/mjosefa-cote`),
 su modelo o su manejo de contexto, y quieras saber si mejoró o empeoró sin revisar las respuestas
 una por una.
 

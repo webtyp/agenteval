@@ -115,7 +115,7 @@ Medido el 2026-09-30 con Q4_K_M en la RTX 3060, `llama-server` build 11201. Los 
 
 - **La lectura coincide con la del autor.** El ejemplo de su README ("cobro doble" → `billing`) da
   0,836. El autor publica 0,830 en GPU y 0,844 en PyTorch.
-- **Casos básicos: 20 de 20.** Respuestas de Jose correctas, con hora inventada, con un sábado
+- **Casos básicos: 20 de 20.** Respuestas de Cote correctas, con hora inventada, con un sábado
   inventado, con tono cálido o que contradicen la herramienta. Se probó con la pregunta en inglés y
   en español, en forma de elección y de sí/no.
 - **Casos difíciles: 14 de 16.** Paráfrasis ("6 de la tarde" = 18:00), razonar con el día ("hoy es
@@ -135,7 +135,7 @@ Medido el 2026-09-30 con Q4_K_M en la RTX 3060, `llama-server` build 11201. Los 
    dos.
 2. **Una confianza menor que 0,8 no es un veredicto.** El intento se marca como "a revisar por una
    persona", no como aprobado ni reprobado.
-3. **El contexto del juez va en inglés y el texto de Jose va tal cual, en español.** El modelo se
+3. **El contexto del juez va en inglés y el texto de Cote va tal cual, en español.** El modelo se
    entrenó principalmente en inglés. Aun así, las preguntas en español funcionaron en los casos
    medidos.
 4. **Antes de confiar en el juez para un criterio nuevo, se mide contra ti.** Etiquetas unas 30

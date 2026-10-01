@@ -274,7 +274,7 @@ func TestScenarioExecutionWithFakeServer(t *testing.T) {
 	scen.Run(t, func(env agenteval.Env) (*agent.Agent, error) {
 		cfg := env.Config()
 		cfg.Identity = agentcontext.Identity{
-			Name:         "Jose",
+			Name:         "Cote",
 			Role:         "Recepcionista",
 			Instructions: "Responde de forma concisa.",
 		}
@@ -405,7 +405,7 @@ func TestScenarioPendingCallWithFakeServer(t *testing.T) {
 	scen.Run(t, func(env agenteval.Env) (*agent.Agent, error) {
 		cfg := env.Config()
 		cfg.Identity = agentcontext.Identity{
-			Name:         "Jose",
+			Name:         "Cote",
 			Role:         "Recepcionista",
 			Instructions: "Agenda citas.",
 		}

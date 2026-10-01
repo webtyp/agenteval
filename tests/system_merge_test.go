@@ -73,7 +73,7 @@ func TestModelClient_SendsOneSystemMessageFirst(t *testing.T) {
 		MinPass: 1,
 	}.Run(t, func(env agenteval.Env) (*agent.Agent, error) {
 		cfg := env.Config()
-		cfg.Identity = agentcontext.Identity{Name: "Jose"}
+		cfg.Identity = agentcontext.Identity{Name: "Cote"}
 		return agent.New(cfg)
 	})
 	if chats < 2 {
