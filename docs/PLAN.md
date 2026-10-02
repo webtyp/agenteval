@@ -3,6 +3,8 @@ PLAN: "feat!: hybrid Env — Decider (decider-0.8b with qwen's prompt) and Write
 TAG: v0.3.0
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 83756151721164161
 ---
 
 > This plan is dispatched via the CodeJob workflow. See skill: agents-workflow.
