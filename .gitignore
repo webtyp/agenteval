@@ -19,3 +19,7 @@ coverage.html
 *.code-workspace
 .vscode
 go.work
+
+# Laboratorio: model files (hundreds of MB) and the release build
+models/
+/web/public/

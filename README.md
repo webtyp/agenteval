@@ -73,6 +73,40 @@ semilla (1, 2, …), así que repetir la suite completa da el mismo resultado.
 1. **Verificadores deterministas en Go:** qué tools se llamaron y qué contiene la respuesta.
 2. **Un juez local** para lo que no es una regla. Hoy es decider-4b sobre `llama-server`.
 
+## Laboratorio: el agente en el navegador
+
+Los escenarios miden el agente contra `llama-server`. El laboratorio lo corre **donde va a correr**:
+en un Web Worker del navegador, con los modelos reales en WebAssembly, y un chat para hablarle.
+
+| Pieza | Qué es |
+|---|---|
+| `ui/` | el panel de chat: botón para despertar al agente, progreso de descarga, conversación, confirmar o cancelar cambios. Sirve para cualquier agente que corra en `webtyp.com/agentworker` |
+| `lab/` | los archivos de modelos del laboratorio (`ArtifactSources()`) y `Serve` |
+| `lab/worker/` | el agente de prueba: un asistente de consultorio con dos herramientas (leer el horario, cambiarlo) |
+| `web/client.go` | la página: `ui.New(lab.Scripts)` |
+| `web/workers/agent/main.go` | el Worker: `agentworker.Serve(worker.Setup(ids))` |
+| `cmd/lab` | build de release + servidor HTTPS |
+
+Cómo correrlo:
+
+```bash
+mkdir -p models
+ln ~/Dev/LMmodels/Mapika/decider-0.8b/decider-0.8b.{wtypw,merges} models/
+ln ~/Dev/LMmodels/LiquidAI/LFM2.5-350M/lfm2.5-350m.{wtypw,merges} models/
+go run ./cmd/lab          # build de release en web/public y https://localhost:8443
+```
+
+Abrir `https://localhost:8443` y pulsar **Despertar al agente**. La primera vez el Worker copia los
+modelos (≈ 1,2 GB) del servidor a su almacenamiento propio (OPFS) y verifica su SHA-256; después
+arranca desde ahí sin descargar.
+
+Por qué `go run ./cmd/lab` y no solo `webtyp dev`: el servidor de desarrollo compila la página pero
+todavía no compila los Workers (`web/workers/`), y los modelos solo se publican en el build de
+release (`/artifacts.json`, `/artifacts/`). Con `webtyp dev` se ve la interfaz; para hablar con el
+agente, `cmd/lab`.
+
+Resultados de las pruebas reales: [docs/REAL_TESTS.md](docs/REAL_TESTS.md).
+
 ## Documentación
 
 - [docs/JUDGE.md](docs/JUDGE.md): el modelo juez, cómo se le pregunta, cómo se lee y qué tan
