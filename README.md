@@ -38,25 +38,35 @@ func TestHorarioDeHoy(t *testing.T) {
 			agenteval.AsksNothingToConfirm(),
 		},
 		Runs: 10, MinPass: 9,
-	}.Run(t, jose.New)
+	}.Run(t, func(env agenteval.Env) (*agent.Agent, error) {
+		cfg := env.Config() // el decisor, el redactor y el resto de las piezas del escenario
+		cfg.Texts = cote.Texts // las palabras de la aplicación
+		return agent.New(cfg)
+	})
 }
 ```
 
-Para correr los escenarios se inician el modelo y el juez en `llama-server`:
+`Env` trae las dos piezas del agente híbrido: el **decisor** (decider-0.8b, que elige entre
+opciones) y el **redactor** (LFM2.5-350M, que escribe respuestas a partir de datos). Al decisor se
+le pregunta con el mismo texto que lee en el navegador (`qwen.DecidePrompt`), así que lo que se
+mide aquí es lo que corre en la aplicación.
+
+Para correr los escenarios se inician tres `llama-server`:
 
 ```bash
-# Modelo bajo prueba
-llama-server -m <model.gguf> --port 8080 --jinja -c 4096 --reasoning-budget 0 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0
+# Decisor (AGENTEVAL_DECIDER_URL)
+llama-server -m ~/Dev/LMmodels/mradermacher/decider-0.8b-GGUF/decider-0.8b.Q8_0.gguf --port 8080 -np 1 -c 4096
 
-# Juez
+# Redactor (AGENTEVAL_WRITER_URL)
+llama-server -m ~/Dev/LMmodels/LiquidAI/LFM2.5-350M-GGUF/LFM2.5-350M-Q8_0.gguf --port 8081 --jinja -np 1 -c 4096 --temp 0.3
+
+# Juez (AGENTEVAL_JUDGE_URL)
 llama-server -m decider-4b-v2.1-Q4_K_M.gguf --port 8090 -np 1 -c 4096 -ngl 99
 ```
 
-Los parámetros de muestreo (`--temp`, `--top-p`, `--top-k`, `--min-p`) son los que Qwen3.5
-recomienda para responder sin razonamiento; otro modelo usa los suyos. **No se usa temperatura
-0:** con 0, los N intentos serían el mismo intento repetido y la tasa de éxito no mediría nada.
-Cada intento usa su propia semilla (1, 2, …), así que los intentos varían entre sí y repetir la
-suite completa da el mismo resultado.
+El decisor se lee a temperatura 0 (se toma la probabilidad de cada letra, con la temperatura de
+decisión 1,03 que usa el navegador). El redactor varía entre intentos: cada intento usa su propia
+semilla (1, 2, …), así que repetir la suite completa da el mismo resultado.
 
 ## Cómo se decide si un intento aprobó
 

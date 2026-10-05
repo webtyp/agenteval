@@ -3,13 +3,8 @@
 package tests
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"webtyp.com/agent"
-	"webtyp.com/agentcontext"
 	"webtyp.com/agenteval"
 	"webtyp.com/model"
 )
@@ -137,128 +132,18 @@ func TestScenarioValidation(t *testing.T) {
 }
 
 func TestScenarioExecutionWithFakeServer(t *testing.T) {
-	callCount := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/props":
-			resp := map[string]any{
-				"default_generation_settings": map[string]any{
-					"n_ctx": 4096,
-				},
-			}
-			json.NewEncoder(w).Encode(resp)
-		case "/apply-template":
-			var body struct {
-				Kwargs map[string]any `json:"chat_template_kwargs"`
-			}
-			_ = json.NewDecoder(r.Body).Decode(&body)
-			if v, ok := body.Kwargs["enable_thinking"]; !ok || v != false {
-				t.Errorf("the critic must render with enable_thinking=false, got %v", body.Kwargs)
-			}
-			resp := map[string]any{
-				"prompt": "<formatted prompt>",
-			}
-			json.NewEncoder(w).Encode(resp)
-		case "/tokenize":
-			resp := map[string]any{
-				"tokens": []int{1},
-			}
-			json.NewEncoder(w).Encode(resp)
-		case "/completion":
-			resp := map[string]any{
-				"completion_probabilities": []map[string]any{
-					{
-						"top_logprobs": []map[string]any{
-							{"id": 1, "logprob": 0.0},
-						},
-					},
-				},
-			}
-			json.NewEncoder(w).Encode(resp)
-		case "/v1/chat/completions":
-			callCount++
-			switch callCount {
-			case 1:
-				// Step 1: Call search_tools to discover list_business_hours
-				resp := map[string]any{
-					"choices": []map[string]any{
-						{
-							"message": map[string]any{
-								"tool_calls": []map[string]any{
-									{
-										"id":   "call_search",
-										"type": "function",
-										"function": map[string]any{
-											"name":      "search_tools",
-											"arguments": `{"query":"business hours"}`,
-										},
-									},
-								},
-							},
-							"finish_reason": "tool_calls",
-						},
-					},
-					"usage": map[string]any{"prompt_tokens": 10, "completion_tokens": 5},
-				}
-				json.NewEncoder(w).Encode(resp)
-			case 2:
-				// Step 2: Call list_business_hours
-				resp := map[string]any{
-					"choices": []map[string]any{
-						{
-							"message": map[string]any{
-								"tool_calls": []map[string]any{
-									{
-										"id":   "call_hours",
-										"type": "function",
-										"function": map[string]any{
-											"name":      "list_business_hours",
-											"arguments": "{}",
-										},
-									},
-								},
-							},
-							"finish_reason": "tool_calls",
-						},
-					},
-					"usage": map[string]any{"prompt_tokens": 15, "completion_tokens": 5},
-				}
-				json.NewEncoder(w).Encode(resp)
-			default:
-				// Step 3: Return final answer
-				resp := map[string]any{
-					"choices": []map[string]any{
-						{
-							"message": map[string]any{
-								"content": "Hasta las 18:00.",
-							},
-							"finish_reason": "stop",
-						},
-					},
-					"usage": map[string]any{"prompt_tokens": 20, "completion_tokens": 10},
-				}
-				json.NewEncoder(w).Encode(resp)
-			}
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	defer server.Close()
+	useFakeServers(t, "Hoy atendemos hasta las 18:00.", nil)
 
-	t.Setenv("AGENTEVAL_MODEL_URL", server.URL)
-
-	scen := agenteval.Scenario{
+	agenteval.Scenario{
 		Given: agenteval.Given{
 			At: agenteval.Moment{Year: 2026, Month: 9, Day: 29, Hour: 10, UTCOffsetMinutes: -180},
-			Tools: []agenteval.FakeTool{
-				{
-					Name:        "list_business_hours",
-					Description: "Opening hours of the clinic for every day of the week.",
-					InputSchema: `{"type":"object","properties":{}}`,
-					Action:      model.Read,
-					Returns:     "Monday to Friday 08:00-18:00.",
-				},
-			},
+			Tools: []agenteval.FakeTool{{
+				Name:        "list_business_hours",
+				Description: "Opening hours of the clinic for every day of the week.",
+				InputSchema: `{"type":"object","properties":{}}`,
+				Action:      model.Read,
+				Returns:     "Monday to Friday 08:00-18:00.",
+			}},
 		},
 		When: "¿Hasta qué hora atendemos hoy?",
 		Then: []agenteval.Check{
@@ -269,129 +154,22 @@ func TestScenarioExecutionWithFakeServer(t *testing.T) {
 		},
 		Runs:    1,
 		MinPass: 1,
-	}
-
-	scen.Run(t, func(env agenteval.Env) (*agent.Agent, error) {
-		cfg := env.Config()
-		cfg.Identity = agentcontext.Identity{
-			Name:         "Cote",
-			Role:         "Recepcionista",
-			Instructions: "Responde de forma concisa.",
-		}
-		return agent.New(cfg)
-	})
+	}.Run(t, buildWithTexts)
 }
 
 func TestScenarioPendingCallWithFakeServer(t *testing.T) {
-	callCount := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/props":
-			resp := map[string]any{
-				"default_generation_settings": map[string]any{
-					"n_ctx": 4096,
-				},
-			}
-			json.NewEncoder(w).Encode(resp)
-		case "/apply-template":
-			var body struct {
-				Kwargs map[string]any `json:"chat_template_kwargs"`
-			}
-			_ = json.NewDecoder(r.Body).Decode(&body)
-			if v, ok := body.Kwargs["enable_thinking"]; !ok || v != false {
-				t.Errorf("the critic must render with enable_thinking=false, got %v", body.Kwargs)
-			}
-			resp := map[string]any{
-				"prompt": "<formatted prompt>",
-			}
-			json.NewEncoder(w).Encode(resp)
-		case "/tokenize":
-			resp := map[string]any{
-				"tokens": []int{1},
-			}
-			json.NewEncoder(w).Encode(resp)
-		case "/completion":
-			resp := map[string]any{
-				"completion_probabilities": []map[string]any{
-					{
-						"top_logprobs": []map[string]any{
-							{"id": 1, "logprob": 0.0},
-						},
-					},
-				},
-			}
-			json.NewEncoder(w).Encode(resp)
-		case "/v1/chat/completions":
-			callCount++
-			switch callCount {
-			case 1:
-				// Step 1: Call search_tools to discover create_appointment
-				resp := map[string]any{
-					"choices": []map[string]any{
-						{
-							"message": map[string]any{
-								"tool_calls": []map[string]any{
-									{
-										"id":   "call_search",
-										"type": "function",
-										"function": map[string]any{
-											"name":      "search_tools",
-											"arguments": `{"query":"appointment"}`,
-										},
-									},
-								},
-							},
-							"finish_reason": "tool_calls",
-						},
-					},
-					"usage": map[string]any{"prompt_tokens": 10, "completion_tokens": 5},
-				}
-				json.NewEncoder(w).Encode(resp)
-			default:
-				// Step 2: Model calls create_appointment tool (Action: Create)
-				resp := map[string]any{
-					"choices": []map[string]any{
-						{
-							"message": map[string]any{
-								"content": "A continuación agendaré tu cita.",
-								"tool_calls": []map[string]any{
-									{
-										"id":   "call_create",
-										"type": "function",
-										"function": map[string]any{
-											"name":      "create_appointment",
-											"arguments": `{"time":"10:00"}`,
-										},
-									},
-								},
-							},
-							"finish_reason": "tool_calls",
-						},
-					},
-					"usage": map[string]any{"prompt_tokens": 15, "completion_tokens": 5},
-				}
-				json.NewEncoder(w).Encode(resp)
-			}
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	defer server.Close()
+	useFakeServers(t, "unused", nil)
 
-	t.Setenv("AGENTEVAL_MODEL_URL", server.URL)
-
-	scen := agenteval.Scenario{
+	agenteval.Scenario{
 		Given: agenteval.Given{
 			At: agenteval.Moment{Year: 2026, Month: 9, Day: 29, Hour: 10, UTCOffsetMinutes: -180},
-			Tools: []agenteval.FakeTool{
-				{
-					Name:        "create_appointment",
-					Description: "Create a new clinic appointment.",
-					InputSchema: `{"type":"object","properties":{"time":{"type":"string"}}}`,
-					Action:      model.Create,
-					Returns:     "appointment created",
-				},
-			},
+			Tools: []agenteval.FakeTool{{
+				Name:        "create_appointment",
+				Description: "Create a new clinic appointment.",
+				InputSchema: `{"type":"object","properties":{"time":{"type":"string"}}}`,
+				Action:      model.Create,
+				Returns:     "appointment created",
+			}},
 		},
 		When: "Quiero agendar una cita para las 10:00",
 		Then: []agenteval.Check{
@@ -400,17 +178,7 @@ func TestScenarioPendingCallWithFakeServer(t *testing.T) {
 		},
 		Runs:    1,
 		MinPass: 1,
-	}
-
-	scen.Run(t, func(env agenteval.Env) (*agent.Agent, error) {
-		cfg := env.Config()
-		cfg.Identity = agentcontext.Identity{
-			Name:         "Cote",
-			Role:         "Recepcionista",
-			Instructions: "Agenda citas.",
-		}
-		return agent.New(cfg)
-	})
+	}.Run(t, buildWithTexts)
 }
 
 func bytesContains(s, substr string) bool {

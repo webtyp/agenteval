@@ -10,80 +10,161 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
-	"webtyp.com/agentcontext"
 	"webtyp.com/context"
 	"webtyp.com/llm"
+	"webtyp.com/qwen"
 )
 
 const (
-	defaultModelURL           = "http://127.0.0.1:8080"
-	envModelURL               = "AGENTEVAL_MODEL_URL"
-	llamaChatPath             = "/v1/chat/completions"
-	llamaTokenizePath         = "/tokenize"
-	llamaPropsPath            = "/props"
-	llamaApplyTemplatePath    = "/apply-template"
-	llamaCompletionPath       = "/completion"
-	DefaultOutputTokens       = 512
-	errModelServerUnreachable = "agenteval: no model server at %s; start one with: llama-server -m <model.gguf> --port 8080 --jinja -c 4096 --reasoning-budget 0 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0 (or set AGENTEVAL_MODEL_URL)"
+	defaultDeciderURL = "http://127.0.0.1:8080"
+	envDeciderURL     = "AGENTEVAL_DECIDER_URL"
+	defaultWriterURL  = "http://127.0.0.1:8081"
+	envWriterURL      = "AGENTEVAL_WRITER_URL"
+	llamaChatPath     = "/v1/chat/completions"
+	llamaTokenizePath = "/tokenize"
+	llamaHealthPath   = "/health"
+	// DecideTemperature is decider-0.8b's decision temperature, the one the browser uses
+	// (qwen.Config.DecideTemperature).
+	DecideTemperature     = 1.03
+	errDeciderUnreachable = "agenteval: no decision model at %s; start it with: llama-server -m ~/Dev/LMmodels/mradermacher/decider-0.8b-GGUF/decider-0.8b.Q8_0.gguf --port 8080 -np 1 -c 4096 (or set AGENTEVAL_DECIDER_URL)"
+	errWriterUnreachable  = "agenteval: no writer at %s; start it with: llama-server -m ~/Dev/LMmodels/LiquidAI/LFM2.5-350M-GGUF/LFM2.5-350M-Q8_0.gguf --port 8081 --jinja -np 1 -c 4096 --temp 0.3 (or set AGENTEVAL_WRITER_URL)"
+	errDecideOptions      = "agenteval: a decision takes 2 to 10 options, got %d"
 )
 
-type modelServer struct {
-	url     string
-	client  *http.Client
-	seed    int             // the sampling seed of one attempt: attempts differ, and a rerun repeats them
-	letters *llamaTokenizer // shared by every attempt's copy
+// serverURL returns override, else the environment variable, else def.
+func serverURL(override, env, def string) string {
+	if override != "" {
+		return override
+	}
+	if u := os.Getenv(env); u != "" {
+		return u
+	}
+	return def
 }
 
-// forAttempt is the same server sampled with the seed of attempt i. The sampling settings
-// (temperature, top-p, top-k) are the ones llama-server was started with, so they belong to
-// the model, not to this library.
-func (m *modelServer) forAttempt(i int) *modelServer {
-	return &modelServer{url: m.url, client: m.client, seed: i, letters: m.letters}
+func newHTTPClient() *http.Client { return &http.Client{Timeout: 120 * time.Second} }
+
+// healthy reports whether a llama-server answers its /health.
+func healthy(client *http.Client, url string) bool {
+	resp, err := client.Get(url + llamaHealthPath)
+	if err != nil {
+		return false
+	}
+	resp.Body.Close()
+	return resp.StatusCode == http.StatusOK
 }
 
-func newModelServer(overrideURL string) *modelServer {
-	u := overrideURL
-	if u == "" {
-		u = os.Getenv(envModelURL)
+// deciderServer is decider-0.8b on llama-server, asked exactly as webtyp.com/qwen asks it in the
+// browser: the pieces of qwen.DecidePrompt, each tokenized on its own, and the option letters read
+// from the next token's probabilities.
+type deciderServer struct {
+	url    string
+	client *http.Client
+	tok    *llamaTokenizer
+}
+
+func newDeciderServer(override string) *deciderServer {
+	u := serverURL(override, envDeciderURL, defaultDeciderURL)
+	client := newHTTPClient()
+	return &deciderServer{url: u, client: client, tok: &llamaTokenizer{url: u, client: client}}
+}
+
+func (d *deciderServer) available() bool { return healthy(d.client, d.url) }
+
+// Decide answers a closed question by the probability of each option's letter.
+func (d *deciderServer) Decide(ctx *context.Context, q llm.Question) (llm.Decision, error) {
+	n := len(q.Options)
+	if n < 2 || n > 10 {
+		return llm.Decision{}, fmt.Errorf(errDecideOptions, n)
 	}
-	if u == "" {
-		u = defaultModelURL
+	var ids []int
+	for _, piece := range qwen.DecidePrompt(q) {
+		toks, err := d.tok.tokenize(piece)
+		if err != nil {
+			return llm.Decision{}, err
+		}
+		ids = append(ids, toks...)
 	}
-	client := &http.Client{Timeout: 120 * time.Second}
-	return &modelServer{url: u, client: client, letters: &llamaTokenizer{url: u, client: client}}
+	letters, err := d.tok.letterIDs(n)
+	if err != nil {
+		return llm.Decision{}, err
+	}
+	logprobs, err := completionLogprobs(d.client, d.url, judgeCompletionReq{
+		Prompt: ids, NPredict: 1, NProbs: 100, Temperature: 0, CachePrompt: false,
+	})
+	if err != nil {
+		return llm.Decision{}, err
+	}
+	choice, confidence, probs := computeOptionDecision(logprobs, letters, DecideTemperature)
+	return llm.Decision{Choice: choice, Confidence: confidence, Probs: probs}, nil
+}
+
+// CountTokens counts with the decider's tokenizer; a failed request falls back to len/4.
+func (d *deciderServer) CountTokens(text string) int {
+	toks, err := d.tok.tokenize(text)
+	if err != nil {
+		return len(text) / 4
+	}
+	return len(toks)
+}
+
+// completionLogprobs posts one /completion and returns the first token's top logprobs by id.
+func completionLogprobs(client *http.Client, url string, req judgeCompletionReq) (map[int]float64, error) {
+	body, _ := json.Marshal(req)
+	httpReq, err := http.NewRequestWithContext(stdcontext.Background(), "POST", url+judgeCompletionPath, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("completion request failed: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("completion status: %d", resp.StatusCode)
+	}
+	var out judgeCompletionResp
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return nil, fmt.Errorf("failed to decode completion response: %w", err)
+	}
+	if len(out.CompletionProbabilities) == 0 {
+		return nil, fmt.Errorf("no completion probabilities returned")
+	}
+	lp := make(map[int]float64)
+	for _, item := range out.CompletionProbabilities[0].TopLogprobs {
+		lp[item.ID] = item.Logprob
+	}
+	return lp, nil
+}
+
+// writerServer is LFM2.5-350M on llama-server: it phrases answers from data and never sees tools.
+type writerServer struct {
+	url    string
+	client *http.Client
+	seed   int
+}
+
+func newWriterServer(override string) *writerServer {
+	return &writerServer{url: serverURL(override, envWriterURL, defaultWriterURL), client: newHTTPClient()}
+}
+
+func (w *writerServer) available() bool { return healthy(w.client, w.url) }
+
+// forAttempt returns the writer with attempt i's seed, so attempts vary and a rerun repeats them.
+func (w *writerServer) forAttempt(i int) *writerServer {
+	return &writerServer{url: w.url, client: w.client, seed: i}
 }
 
 type llamaMessage struct {
-	Role       string          `json:"role"`
-	Content    string          `json:"content,omitempty"`
-	ToolCalls  []llamaToolCall `json:"tool_calls,omitempty"`
-	ToolCallID string          `json:"tool_call_id,omitempty"`
-}
-
-type llamaToolCall struct {
-	ID       string `json:"id"`
-	Type     string `json:"type"`
-	Function struct {
-		Name      string `json:"name"`
-		Arguments string `json:"arguments"`
-	} `json:"function"`
-}
-
-type llamaToolDef struct {
-	Type     string `json:"type"`
-	Function struct {
-		Name        string          `json:"name"`
-		Description string          `json:"description"`
-		Parameters  json.RawMessage `json:"parameters"`
-	} `json:"function"`
+	Role    string `json:"role"`
+	Content string `json:"content,omitempty"`
 }
 
 type llamaChatRequest struct {
 	Messages  []llamaMessage `json:"messages"`
-	Tools     []llamaToolDef `json:"tools,omitempty"`
 	MaxTokens int            `json:"max_tokens,omitempty"`
 	Stream    bool           `json:"stream"`
 	Seed      int            `json:"seed"`
@@ -100,84 +181,10 @@ type llamaChatResponse struct {
 	} `json:"usage"`
 }
 
-type llamaTokenizeRequest struct {
-	Content string `json:"content"`
-}
-
-type llamaTokenizeResponse struct {
-	Tokens []any `json:"tokens"`
-}
-
-type llamaPropsResponse struct {
-	DefaultGenerationSettings struct {
-		NCtx int `json:"n_ctx"`
-	} `json:"default_generation_settings"`
-}
-
-type llamaApplyTemplateRequest struct {
-	Messages           []llamaMessage     `json:"messages"`
-	ChatTemplateKwargs chatTemplateKwargs `json:"chat_template_kwargs"`
-}
-
-// chatTemplateKwargs turns thinking off, so the rendered prompt ends with the closed
-// "<think>\n\n</think>\n\n" and the option letter is the first token of the answer.
-type chatTemplateKwargs struct {
-	EnableThinking bool `json:"enable_thinking"`
-}
-
-type llamaApplyTemplateResponse struct {
-	Prompt string `json:"prompt"`
-}
-
-type llamaCompletionReq struct {
-	Prompt      string  `json:"prompt"`
-	NPredict    int     `json:"n_predict"`
-	NProbs      int     `json:"n_probs"`
-	Temperature float64 `json:"temperature"`
-	CachePrompt bool    `json:"cache_prompt"`
-}
-
-type llamaCompletionResp struct {
-	CompletionProbabilities []struct {
-		TopLogprobs []struct {
-			ID      int     `json:"id"`
-			Logprob float64 `json:"logprob"`
-		} `json:"top_logprobs"`
-	} `json:"completion_probabilities"`
-}
-
-func (m *modelServer) budget() (agentcontext.Budget, error) {
-	resp, err := m.client.Get(m.url + llamaPropsPath)
-	if err != nil {
-		return agentcontext.Budget{}, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return agentcontext.Budget{}, fmt.Errorf("props status: %d", resp.StatusCode)
-	}
-
-	var props llamaPropsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&props); err != nil {
-		return agentcontext.Budget{}, err
-	}
-
-	nCtx := props.DefaultGenerationSettings.NCtx
-	if nCtx <= 0 {
-		nCtx = 4096
-	}
-
-	return agentcontext.Budget{
-		ContextTokens: nCtx,
-		OutputTokens:  DefaultOutputTokens,
-	}, nil
-}
-
-func (m *modelServer) Generate(ctx *context.Context, req llm.Request) (llm.Response, error) {
+// Generate asks the writer through the chat completions endpoint. Every llm.RoleSystem message is
+// folded into one system block at the start: chat templates accept only that.
+func (w *writerServer) Generate(ctx *context.Context, req llm.Request) (llm.Response, error) {
 	var messages []llamaMessage
-
-	// Qwen's chat template accepts one system block, at the start: every llm.RoleSystem message
-	// (summaries, the critic's retry note) is folded into it, as webtyp.com/qwen does.
 	system := req.System
 	for _, msg := range req.Messages {
 		if msg.Role == llm.RoleSystem && msg.Content != "" {
@@ -190,246 +197,43 @@ func (m *modelServer) Generate(ctx *context.Context, req llm.Request) (llm.Respo
 	if system != "" {
 		messages = append(messages, llamaMessage{Role: "system", Content: system})
 	}
-
 	for _, msg := range req.Messages {
 		if msg.Role == llm.RoleSystem {
 			continue
 		}
-		lm := llamaMessage{
-			Role:    string(msg.Role),
-			Content: msg.Content,
-		}
-		if msg.Role == llm.RoleTool {
-			lm.ToolCallID = msg.ToolCallID
-		}
-		if msg.Role == llm.RoleAssistant && len(msg.ToolCalls) > 0 {
-			var tcs []llamaToolCall
-			for _, tc := range msg.ToolCalls {
-				tcs = append(tcs, llamaToolCall{
-					ID:   tc.ID,
-					Type: "function",
-					Function: struct {
-						Name      string `json:"name"`
-						Arguments string `json:"arguments"`
-					}{
-						Name:      tc.Name,
-						Arguments: tc.Input,
-					},
-				})
-			}
-			lm.ToolCalls = tcs
-		}
-		messages = append(messages, lm)
+		messages = append(messages, llamaMessage{Role: string(msg.Role), Content: msg.Content})
 	}
 
-	var tools []llamaToolDef
-	for _, t := range req.Tools {
-		tools = append(tools, llamaToolDef{
-			Type: "function",
-			Function: struct {
-				Name        string          `json:"name"`
-				Description string          `json:"description"`
-				Parameters  json.RawMessage `json:"parameters"`
-			}{
-				Name:        t.Name,
-				Description: t.Description,
-				Parameters:  json.RawMessage(t.InputSchema),
-			},
-		})
-	}
-
-	bodyObj := llamaChatRequest{
-		Messages:  messages,
-		Tools:     tools,
-		MaxTokens: req.MaxOutputTokens,
-		Stream:    false,
-		Seed:      m.seed,
-	}
-
-	bodyBytes, _ := json.Marshal(bodyObj)
-	httpReq, err := http.NewRequestWithContext(stdcontext.Background(), "POST", m.url+llamaChatPath, bytes.NewReader(bodyBytes))
+	body, _ := json.Marshal(llamaChatRequest{Messages: messages, MaxTokens: req.MaxOutputTokens, Seed: w.seed})
+	httpReq, err := http.NewRequestWithContext(stdcontext.Background(), "POST", w.url+llamaChatPath, bytes.NewReader(body))
 	if err != nil {
 		return llm.Response{}, err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := m.client.Do(httpReq)
+	resp, err := w.client.Do(httpReq)
 	if err != nil {
 		return llm.Response{}, fmt.Errorf("llama-server request failed: %w", err)
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return llm.Response{}, fmt.Errorf("llama-server error %d: %s", resp.StatusCode, string(body))
+		b, _ := io.ReadAll(resp.Body)
+		return llm.Response{}, fmt.Errorf("llama-server error %d: %s", resp.StatusCode, string(b))
 	}
-
-	var chatResp llamaChatResponse
-	if err := json.NewDecoder(resp.Body).Decode(&chatResp); err != nil {
+	var chat llamaChatResponse
+	if err := json.NewDecoder(resp.Body).Decode(&chat); err != nil {
 		return llm.Response{}, fmt.Errorf("failed to decode response: %w", err)
 	}
-
-	if len(chatResp.Choices) == 0 {
+	if len(chat.Choices) == 0 {
 		return llm.Response{}, fmt.Errorf("no choices returned")
 	}
-
-	choice := chatResp.Choices[0]
-
-	llmResp := llm.Response{
-		Text:  choice.Message.Content,
-		Usage: llm.Usage{InputTokens: chatResp.Usage.PromptTokens, OutputTokens: chatResp.Usage.CompletionTokens},
+	choice := chat.Choices[0]
+	out := llm.Response{
+		Text:       choice.Message.Content,
+		StopReason: llm.StopEndTurn,
+		Usage:      llm.Usage{InputTokens: chat.Usage.PromptTokens, OutputTokens: chat.Usage.CompletionTokens},
 	}
-
-	switch choice.FinishReason {
-	case "tool_calls":
-		llmResp.StopReason = llm.StopToolUse
-	case "length":
-		llmResp.StopReason = llm.StopMaxTokens
-	default:
-		if len(choice.Message.ToolCalls) > 0 {
-			llmResp.StopReason = llm.StopToolUse
-		} else {
-			llmResp.StopReason = llm.StopEndTurn
-		}
+	if choice.FinishReason == "length" {
+		out.StopReason = llm.StopMaxTokens
 	}
-
-	for _, tc := range choice.Message.ToolCalls {
-		llmResp.ToolCalls = append(llmResp.ToolCalls, llm.ToolCall{
-			ID:    tc.ID,
-			Name:  tc.Function.Name,
-			Input: tc.Function.Arguments,
-		})
-	}
-
-	return llmResp, nil
-}
-
-func (m *modelServer) CountTokens(text string) int {
-	bodyBytes, _ := json.Marshal(llamaTokenizeRequest{Content: text})
-	httpReq, err := http.NewRequestWithContext(stdcontext.Background(), "POST", m.url+llamaTokenizePath, bytes.NewReader(bodyBytes))
-	if err != nil {
-		return len(text) / 4
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := m.client.Do(httpReq)
-	if err != nil {
-		return len(text) / 4
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return len(text) / 4
-	}
-
-	var tokResp llamaTokenizeResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tokResp); err != nil {
-		return len(text) / 4
-	}
-
-	return len(tokResp.Tokens)
-}
-
-func formatCriticContent(q llm.Question) string {
-	var sb strings.Builder
-	sb.WriteString("Context:\n")
-	sb.WriteString(q.Context)
-	sb.WriteString("\n\nQuestion: ")
-	sb.WriteString(q.Text)
-	sb.WriteString("\nOptions:\n")
-	for i, opt := range q.Options {
-		sb.WriteString(fmt.Sprintf("(%c) %s\n", 'A'+i, opt))
-	}
-	sb.WriteString("Answer with the letter of one option.")
-	return sb.String()
-}
-
-func (m *modelServer) Decide(ctx *context.Context, q llm.Question) (llm.Decision, error) {
-	numOpts := len(q.Options)
-	if numOpts < 1 || numOpts > 10 {
-		return llm.Decision{}, fmt.Errorf("agenteval: critic takes 1 to 10 options, got %d", numOpts)
-	}
-
-	content := formatCriticContent(q)
-	applyReq := llamaApplyTemplateRequest{
-		Messages: []llamaMessage{{Role: "user", Content: content}},
-	}
-	// ChatTemplateKwargs.EnableThinking stays false: see chatTemplateKwargs.
-	bodyBytes, _ := json.Marshal(applyReq)
-
-	reqCtx := stdcontext.Background()
-
-	httpReq, err := http.NewRequestWithContext(reqCtx, "POST", m.url+llamaApplyTemplatePath, bytes.NewReader(bodyBytes))
-	if err != nil {
-		return llm.Decision{}, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := m.client.Do(httpReq)
-	if err != nil {
-		return llm.Decision{}, fmt.Errorf("apply-template request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return llm.Decision{}, fmt.Errorf("apply-template status: %d", resp.StatusCode)
-	}
-
-	var applyResp llamaApplyTemplateResponse
-	if err := json.NewDecoder(resp.Body).Decode(&applyResp); err != nil {
-		return llm.Decision{}, fmt.Errorf("failed to decode apply-template response: %w", err)
-	}
-
-	letterTokenIDs, err := m.letters.letterIDs(numOpts)
-	if err != nil {
-		return llm.Decision{}, err
-	}
-
-	compReq := llamaCompletionReq{
-		Prompt:      applyResp.Prompt + "(",
-		NPredict:    1,
-		NProbs:      64,
-		Temperature: 0,
-		CachePrompt: false,
-	}
-
-	compBytes, _ := json.Marshal(compReq)
-	compHttpReq, err := http.NewRequestWithContext(reqCtx, "POST", m.url+llamaCompletionPath, bytes.NewReader(compBytes))
-	if err != nil {
-		return llm.Decision{}, err
-	}
-	compHttpReq.Header.Set("Content-Type", "application/json")
-
-	compResp, err := m.client.Do(compHttpReq)
-	if err != nil {
-		return llm.Decision{}, fmt.Errorf("critic completion request failed: %w", err)
-	}
-	defer compResp.Body.Close()
-
-	if compResp.StatusCode != http.StatusOK {
-		return llm.Decision{}, fmt.Errorf("critic completion status: %d", compResp.StatusCode)
-	}
-
-	var compResult llamaCompletionResp
-	if err := json.NewDecoder(compResp.Body).Decode(&compResult); err != nil {
-		return llm.Decision{}, fmt.Errorf("failed to decode completion response: %w", err)
-	}
-
-	if len(compResult.CompletionProbabilities) == 0 {
-		return llm.Decision{}, fmt.Errorf("no completion probabilities returned")
-	}
-
-	topLogprobs := compResult.CompletionProbabilities[0].TopLogprobs
-	logprobMap := make(map[int]float64)
-	for _, item := range topLogprobs {
-		logprobMap[item.ID] = item.Logprob
-	}
-
-	bestIdx, bestProb, probs := computeOptionDecision(logprobMap, letterTokenIDs, 1.0)
-
-	return llm.Decision{
-		Choice:     bestIdx,
-		Confidence: bestProb,
-		Probs:      probs,
-	}, nil
+	return out, nil
 }

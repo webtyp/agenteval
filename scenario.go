@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"webtyp.com/agent"
-	"webtyp.com/agentcontext"
 	"webtyp.com/context"
 	"webtyp.com/llm"
 	"webtyp.com/model"
@@ -44,12 +43,11 @@ type Given struct {
 type Builder func(Env) (*agent.Agent, error)
 
 // Env is everything a scenario provides to the agent. A Builder passes each field to
-// agent.Config unchanged and adds only its own identity and settings.
+// agent.Config unchanged and adds only the application's Texts, Templates and Guard.
 type Env struct {
-	Model     llm.Client
-	Critic    llm.Decider
-	Tokens    llm.TokenCounter
-	Budget    agentcontext.Budget
+	Decider   llm.Decider      // decider-0.8b on llama-server (AGENTEVAL_DECIDER_URL)
+	Writer    llm.Client       // LFM2.5-350M on llama-server (AGENTEVAL_WRITER_URL)
+	Tokens    llm.TokenCounter // the decider's tokenizer
 	Clock     agent.Clock
 	Memory    agent.MemoryStore // fresh for every attempt
 	IDGen     model.IDGenerator
@@ -57,20 +55,17 @@ type Env struct {
 	Tools     []agent.Tool // the scenario's FakeTools; pass them as Config.LocalTools
 }
 
-// Config creates an agent.Config populated with the environment's resources.
-// A Builder can then add its identity:
+// Config returns an agent.Config with the environment's pieces. A Builder adds the
+// application's words:
 //
 //	cfg := env.Config()
-//	cfg.Identity = ...
+//	cfg.Texts, cfg.Templates, cfg.Guard = ...
 //	return agent.New(cfg)
 func (e Env) Config() agent.Config {
 	return agent.Config{
-		LLMs: agent.LLMConfig{
-			Primary: e.Model,
-		},
-		Critic:     e.Critic,
+		Decider:    e.Decider,
+		Writer:     e.Writer,
 		Tokens:     e.Tokens,
-		Budget:     e.Budget,
 		Clock:      e.Clock,
 		Memory:     e.Memory,
 		IDGen:      e.IDGen,
@@ -119,10 +114,13 @@ func (s Scenario) Run(t *testing.T, build Builder) {
 		runs = DefaultRuns
 	}
 
-	ms := newModelServer("")
-	budget, err := ms.budget()
-	if err != nil {
-		t.Fatalf(errModelServerUnreachable, ms.url)
+	dec := newDeciderServer("")
+	if !dec.available() {
+		t.Fatalf(errDeciderUnreachable, dec.url)
+	}
+	wr := newWriterServer("")
+	if !wr.available() {
+		t.Fatalf(errWriterUnreachable, wr.url)
 	}
 
 	var judge llm.Decider
@@ -177,12 +175,10 @@ func (s Scenario) Run(t *testing.T, build Builder) {
 			t.Fatalf("toolIdx.IndexTools failed: %v", err)
 		}
 
-		model := ms.forAttempt(i)
 		env := Env{
-			Model:     model,
-			Critic:    model,
-			Tokens:    model,
-			Budget:    budget,
+			Decider:   dec,
+			Writer:    wr.forAttempt(i),
+			Tokens:    dec,
 			Clock:     s.Given.At.clock(),
 			Memory:    mem,
 			IDGen:     idGen,

@@ -5,15 +5,13 @@ package tests
 import (
 	"testing"
 
-	"webtyp.com/agent"
-	"webtyp.com/agentcontext"
 	"webtyp.com/agenteval"
 	"webtyp.com/model"
 )
 
 // TestIntegration_ClinicHours is an end-to-end scenario evaluation matching TestIntegration_ClinicHours.
-// Note: Qwen3.5-0.8B reaches the tool only about half of the time through search_tools, so MinPass 1
-// only proves the pipeline works end to end.
+// It needs the decider and the writer on llama-server (README); MinPass 1 only proves the pipeline
+// works end to end against the real models.
 func TestIntegration_ClinicHours(t *testing.T) {
 	agenteval.Scenario{
 		Given: agenteval.Given{
@@ -34,14 +32,5 @@ func TestIntegration_ClinicHours(t *testing.T) {
 		},
 		Runs:    10,
 		MinPass: 1,
-	}.Run(t, func(env agenteval.Env) (*agent.Agent, error) {
-		cfg := env.Config()
-		cfg.Identity = agentcontext.Identity{
-			Name:         "Recepcionista",
-			Role:         "Recepcionista de Clínica San Miguel",
-			Instructions: "Responde siempre en español, de forma concisa. Nunca inventes datos de la clínica (horarios, precios, citas): consíguelos siempre con una herramienta. Si no tienes la herramienta adecuada, llama primero a search_tools.",
-			Goals:        []string{"Informar horarios", "Gestionar citas"},
-		}
-		return agent.New(cfg)
-	})
+	}.Run(t, buildWithTexts)
 }
