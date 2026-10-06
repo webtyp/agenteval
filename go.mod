@@ -6,7 +6,7 @@ require (
 	webtyp.com/agent v1.1.0
 	webtyp.com/agentworker v0.1.5
 	webtyp.com/artifacts v0.1.1
-	webtyp.com/components v0.8.6
+	webtyp.com/components v0.8.11
 	webtyp.com/context v0.0.23
 	webtyp.com/dom v0.13.21
 	webtyp.com/fmt v1.0.0
@@ -62,8 +62,5 @@ require (
 	webtyp.com/widget v0.6.36 // indirect
 )
 
-replace (
-	webtyp.com/components => ../components
-	// dom v0.13.19 made Show lazy and components is not migrated yet: back to ../dom once it is.
-	webtyp.com/html => ../html
-)
+// dom v0.13.19 made Show lazy and components is not migrated yet: back to ../dom once it is.
+replace webtyp.com/html => ../html
