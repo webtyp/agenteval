@@ -16,7 +16,7 @@ require (
 	webtyp.com/model v0.2.2
 	webtyp.com/qwen v0.4.7
 	webtyp.com/server v0.2.71
-	webtyp.com/sitec v0.2.43
+	webtyp.com/sitec v0.2.45
 	webtyp.com/unixid v0.2.29
 )
 
