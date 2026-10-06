@@ -56,7 +56,7 @@ require (
 	webtyp.com/tokenizer v0.4.2 // indirect
 	webtyp.com/vector v0.1.1 // indirect
 	webtyp.com/weights v0.3.0 // indirect
-	webtyp.com/widget v0.6.35 // indirect
+	webtyp.com/widget v0.6.36 // indirect
 )
 
 replace (
