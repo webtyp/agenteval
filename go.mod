@@ -13,7 +13,7 @@ require (
 	webtyp.com/html v0.0.26
 	webtyp.com/lfm v0.1.3
 	webtyp.com/llm v0.2.3
-	webtyp.com/model v0.2.1
+	webtyp.com/model v0.2.2
 	webtyp.com/qwen v0.4.7
 	webtyp.com/server v0.2.71
 	webtyp.com/sitec v0.2.43
