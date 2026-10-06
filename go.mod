@@ -8,7 +8,7 @@ require (
 	webtyp.com/artifacts v0.1.1
 	webtyp.com/components v0.8.6
 	webtyp.com/context v0.0.23
-	webtyp.com/dom v0.13.20
+	webtyp.com/dom v0.13.21
 	webtyp.com/fmt v1.0.0
 	webtyp.com/html v0.0.26
 	webtyp.com/lfm v0.1.3
@@ -38,6 +38,7 @@ require (
 	webtyp.com/css v0.4.28 // indirect
 	webtyp.com/decoder v0.5.2 // indirect
 	webtyp.com/device v0.1.0 // indirect
+	webtyp.com/escape v0.1.0 // indirect
 	webtyp.com/fetch v0.1.29 // indirect
 	webtyp.com/filepath v0.1.0 // indirect
 	webtyp.com/files v0.0.4 // indirect
