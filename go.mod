@@ -35,7 +35,7 @@ require (
 	webtyp.com/await v0.1.2 // indirect
 	webtyp.com/base64 v0.0.6 // indirect
 	webtyp.com/color v0.1.2 // indirect
-	webtyp.com/css v0.4.28 // indirect
+	webtyp.com/css v0.4.29 // indirect
 	webtyp.com/decoder v0.5.2 // indirect
 	webtyp.com/device v0.1.0 // indirect
 	webtyp.com/escape v0.1.0 // indirect
