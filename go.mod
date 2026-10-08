@@ -8,7 +8,7 @@ require (
 	webtyp.com/artifacts v0.1.1
 	webtyp.com/components v0.8.12
 	webtyp.com/context v0.0.23
-	webtyp.com/dom v0.13.21
+	webtyp.com/dom v0.13.22
 	webtyp.com/fmt v1.0.0
 	webtyp.com/html v0.0.26
 	webtyp.com/lfm v0.1.3
