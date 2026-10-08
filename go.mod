@@ -10,7 +10,7 @@ require (
 	webtyp.com/context v0.0.23
 	webtyp.com/dom v0.13.23
 	webtyp.com/fmt v1.0.0
-	webtyp.com/html v0.0.26
+	webtyp.com/html v0.0.27
 	webtyp.com/lfm v0.1.3
 	webtyp.com/llm v0.2.3
 	webtyp.com/model v0.2.2
@@ -63,4 +63,3 @@ require (
 )
 
 // dom v0.13.19 made Show lazy and components is not migrated yet: back to ../dom once it is.
-replace webtyp.com/html => ../html
