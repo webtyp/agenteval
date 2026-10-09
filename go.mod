@@ -52,7 +52,7 @@ require (
 	webtyp.com/nn v0.4.2 // indirect
 	webtyp.com/opfs v0.1.3 // indirect
 	webtyp.com/pwa v0.1.1 // indirect
-	webtyp.com/router v0.4.0 // indirect
+	webtyp.com/router v0.4.1 // indirect
 	webtyp.com/svg v0.3.14 // indirect
 	webtyp.com/time v0.5.7 // indirect
 	webtyp.com/tinygo v1.0.1 // indirect
