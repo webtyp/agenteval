@@ -6,7 +6,7 @@ require (
 	webtyp.com/agent v1.1.0
 	webtyp.com/agentworker v0.1.5
 	webtyp.com/artifacts v0.1.1
-	webtyp.com/components v0.8.24
+	webtyp.com/components v0.8.26
 	webtyp.com/context v0.0.23
 	webtyp.com/dom v0.13.25
 	webtyp.com/fmt v1.0.0
@@ -51,7 +51,7 @@ require (
 	webtyp.com/modfind v0.0.11 // indirect
 	webtyp.com/nn v0.4.2 // indirect
 	webtyp.com/opfs v0.1.3 // indirect
-	webtyp.com/pwa v0.1.1 // indirect
+	webtyp.com/pwa v0.2.0 // indirect
 	webtyp.com/router v0.4.2 // indirect
 	webtyp.com/svg v0.3.14 // indirect
 	webtyp.com/time v0.5.7 // indirect
