@@ -15,7 +15,7 @@ require (
 	webtyp.com/llm v0.2.3
 	webtyp.com/model v0.2.3
 	webtyp.com/qwen v0.4.7
-	webtyp.com/server v0.2.77
+	webtyp.com/server v0.2.86
 	webtyp.com/sitec v0.2.55
 	webtyp.com/unixid v0.3.0
 )
@@ -47,12 +47,12 @@ require (
 	webtyp.com/js v0.1.1 // indirect
 	webtyp.com/json v0.5.29 // indirect
 	webtyp.com/lang v0.1.6 // indirect
-	webtyp.com/mcp v0.3.3 // indirect
+	webtyp.com/mcp v0.3.4 // indirect
 	webtyp.com/modfind v0.0.11 // indirect
 	webtyp.com/nn v0.4.2 // indirect
 	webtyp.com/opfs v0.1.3 // indirect
 	webtyp.com/pwa v0.2.0 // indirect
-	webtyp.com/router v0.4.2 // indirect
+	webtyp.com/router v0.4.3 // indirect
 	webtyp.com/svg v0.3.14 // indirect
 	webtyp.com/time v0.5.7 // indirect
 	webtyp.com/tinygo v1.0.1 // indirect
