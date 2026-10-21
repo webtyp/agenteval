@@ -77,6 +77,8 @@ semilla (1, 2, …), así que repetir la suite completa da el mismo resultado.
 
 Los escenarios miden el agente contra `llama-server`. El laboratorio lo corre **donde va a correr**:
 en un Web Worker del navegador, con los modelos reales en WebAssembly, y un chat para hablarle.
+La aplicación pasa mensajes de ejemplo a `ui.New` y cada respuesta muestra una línea con sus tiempos
+(qué significa cada número).
 
 | Pieza | Qué es |
 |---|---|

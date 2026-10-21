@@ -4,6 +4,7 @@ package agenteval
 
 import (
 	"time"
+	wtime "webtyp.com/time"
 )
 
 // Moment is a local date and time.
@@ -23,8 +24,8 @@ type momentClock struct {
 	m Moment
 }
 
-func (mc momentClock) Now() int64 {
-	return mc.m.Now()
+func (mc momentClock) Now() wtime.Nano {
+	return wtime.Nano(mc.m.Now())
 }
 
 func (mc momentClock) UTCOffsetMinutes() int {

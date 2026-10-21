@@ -41,3 +41,11 @@ func ShortfallText(name string) string {
 	}
 	return name
 }
+
+const (
+	ExamplesLabel = "Mensajes de ejemplo"
+	ExamplesHint  = "Elige uno para enviarlo…"
+	TimingsLabel  = "Tiempos"
+	TimingLine    = "Turno %d: %d ms · decisiones (%d): %s ms · herramientas y redactor: %d ms" // turn number, TurnMs, len(DecideMs), DecideMs joined with ", ", TurnMs − sum(DecideMs)
+	NoDecisions   = "—"                                                                       // %s when DecideMs is empty
+)
