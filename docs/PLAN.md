@@ -5,7 +5,7 @@ REVIEWER: none
 STATUS: review
 SESSION: 1984959015553858212
 PR: https://github.com/webtyp/agenteval/pull/3
-REVIEWED_COMMIT: a1ba1eac13c8368fe900b32fc612c0ed1fd37916
+REVIEWED_COMMIT: 2445b6e5ef407e0a092762ce07f3427f67fcc295
 ---
 
 > Read AGENTS.md at the repo root before any change.
