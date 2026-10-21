@@ -1,3 +1,5 @@
+//go:build !wasm
+
 // Command lab builds the agent laboratory with the real models and serves it on
 // https://localhost:8443 (README, "Laboratorio").
 package main
