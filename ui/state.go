@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"strings"
+
 	"webtyp.com/agentworker"
 	"webtyp.com/components/bubblethread"
 	"webtyp.com/fmt"
@@ -24,8 +26,10 @@ type State struct {
 	Notes   []string // warnings when ready; the shortfalls when asleep
 	Bubbles []bubblethread.Bubble
 	Pending []agentworker.Pending // calls waiting for Confirm or Decline
+	Timings []string              // one line per reply
 	Busy    bool                  // a request was sent and its reply has not arrived
 	next    int
+	turns   int
 }
 
 // Wake marks the agent as starting.
@@ -69,6 +73,22 @@ func (s *State) Apply(e agentworker.Event) {
 	case agentworker.EventReply:
 		s.add(Agent, e.Text, false)
 		s.Pending, s.Busy = e.Pending, false
+
+		s.turns++
+		var joined string
+		var sum int64
+		if len(e.DecideMs) == 0 {
+			joined = NoDecisions
+		} else {
+			parts := make([]string, len(e.DecideMs))
+			for i, v := range e.DecideMs {
+				parts[i] = fmt.Sprintf("%d", v)
+				sum += v
+			}
+			joined = strings.Join(parts, ", ")
+		}
+		rest := e.TurnMs - sum
+		s.Timings = append(s.Timings, fmt.Sprintf(TimingLine, s.turns, e.TurnMs, len(e.DecideMs), joined, rest))
 	case agentworker.EventFailed:
 		s.add(Agent, FailedPrefix+e.Text, false)
 		s.Busy = false

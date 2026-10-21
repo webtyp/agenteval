@@ -3,9 +3,10 @@ module webtyp.com/agenteval
 go 1.26.8
 
 require (
-	webtyp.com/agent v1.1.0
-	webtyp.com/agentworker v0.1.5
+	webtyp.com/agent v1.1.12
+	webtyp.com/agentworker v0.1.23
 	webtyp.com/artifacts v0.1.1
+	webtyp.com/avatar v0.2.0
 	webtyp.com/components v0.8.34
 	webtyp.com/context v0.0.23
 	webtyp.com/dom v0.13.26
@@ -17,7 +18,8 @@ require (
 	webtyp.com/qwen v0.4.7
 	webtyp.com/server v0.2.86
 	webtyp.com/sitec v0.2.55
-	webtyp.com/unixid v0.3.0
+	webtyp.com/time v0.6.2
+	webtyp.com/unixid v0.3.1
 )
 
 require (
@@ -31,12 +33,13 @@ require (
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	howett.net/plist v1.0.0 // indirect
-	webtyp.com/agentcontext v0.3.1 // indirect
+	webtyp.com/agentcontext v0.3.2 // indirect
 	webtyp.com/await v0.1.2 // indirect
 	webtyp.com/base64 v0.0.6 // indirect
+	webtyp.com/calendar v0.1.0 // indirect
 	webtyp.com/color v0.1.2 // indirect
-	webtyp.com/css v0.4.30 // indirect
-	webtyp.com/decoder v0.5.2 // indirect
+	webtyp.com/css v0.4.31 // indirect
+	webtyp.com/decoder v0.6.0 // indirect
 	webtyp.com/device v0.1.0 // indirect
 	webtyp.com/escape v0.1.0 // indirect
 	webtyp.com/fetch v0.1.29 // indirect
@@ -49,16 +52,15 @@ require (
 	webtyp.com/lang v0.1.7 // indirect
 	webtyp.com/mcp v0.3.4 // indirect
 	webtyp.com/modfind v0.0.11 // indirect
-	webtyp.com/nn v0.4.2 // indirect
+	webtyp.com/nn v0.5.0 // indirect
 	webtyp.com/opfs v0.1.3 // indirect
 	webtyp.com/pwa v0.2.0 // indirect
 	webtyp.com/router v0.4.3 // indirect
 	webtyp.com/svg v0.3.30 // indirect
-	webtyp.com/time v0.5.7 // indirect
 	webtyp.com/tinygo v1.0.1 // indirect
 	webtyp.com/tokenizer v0.4.2 // indirect
 	webtyp.com/vector v0.1.1 // indirect
-	webtyp.com/weights v0.3.0 // indirect
+	webtyp.com/weights v0.4.0 // indirect
 	webtyp.com/widget v0.6.44 // indirect
 )
 

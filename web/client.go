@@ -10,10 +10,12 @@ import (
 
 	"webtyp.com/agenteval/lab"
 	"webtyp.com/agenteval/ui"
+	"webtyp.com/avatar"
+	"webtyp.com/avatar/reference"
 )
 
 func main() {
-	p := ui.New(lab.Scripts)
+	p := ui.New(lab.Scripts, lab.Examples...).WithAvatar(avatar.New(reference.Catalog()))
 	p.Init(nil)
 	Render("app", p)
 
