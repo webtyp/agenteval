@@ -2,6 +2,8 @@
 PLAN: "feat(ui): lab panel — example messages, each turn's timings, and the avatar beside the chat"
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 1984959015553858212
 ---
 
 > Read AGENTS.md at the repo root before any change.
