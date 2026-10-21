@@ -11,7 +11,7 @@ require (
 	webtyp.com/context v0.0.23
 	webtyp.com/dom v0.13.26
 	webtyp.com/fmt v1.0.0
-	webtyp.com/html v0.0.27
+	webtyp.com/html v0.0.28
 	webtyp.com/lfm v0.1.3
 	webtyp.com/llm v0.2.3
 	webtyp.com/model v0.2.4
