@@ -9,7 +9,7 @@ require (
 	webtyp.com/avatar v0.2.1
 	webtyp.com/components v0.8.51
 	webtyp.com/context v0.0.23
-	webtyp.com/dom v0.13.28
+	webtyp.com/dom v0.13.29
 	webtyp.com/fmt v1.0.0
 	webtyp.com/html v0.0.29
 	webtyp.com/lfm v0.1.3
