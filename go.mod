@@ -7,7 +7,7 @@ require (
 	webtyp.com/agentworker v0.1.23
 	webtyp.com/artifacts v0.1.1
 	webtyp.com/avatar v0.2.1
-	webtyp.com/components v0.8.51
+	webtyp.com/components v0.8.56
 	webtyp.com/context v0.0.23
 	webtyp.com/dom v0.13.29
 	webtyp.com/fmt v1.0.0
