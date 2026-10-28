@@ -7,14 +7,14 @@ require (
 	webtyp.com/agentworker v0.1.23
 	webtyp.com/artifacts v0.1.1
 	webtyp.com/avatar v0.2.1
-	webtyp.com/components v0.8.56
+	webtyp.com/components v0.8.57
 	webtyp.com/context v0.0.23
 	webtyp.com/dom v0.13.29
 	webtyp.com/fmt v1.0.0
 	webtyp.com/html v0.0.30
 	webtyp.com/lfm v0.1.3
 	webtyp.com/llm v0.2.3
-	webtyp.com/model v0.2.8
+	webtyp.com/model v0.2.9
 	webtyp.com/qwen v0.4.7
 	webtyp.com/server v0.2.86
 	webtyp.com/sitec v0.2.70
