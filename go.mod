@@ -16,7 +16,7 @@ require (
 	webtyp.com/llm v0.2.3
 	webtyp.com/model v0.2.12
 	webtyp.com/qwen v0.4.7
-	webtyp.com/server v0.2.99
+	webtyp.com/server v0.2.100
 	webtyp.com/sitec v0.2.80
 	webtyp.com/time v0.6.2
 	webtyp.com/unixid v0.3.1
@@ -24,14 +24,22 @@ require (
 
 require (
 	github.com/HugoSmits86/nativewebp v1.2.1 // indirect
+	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
+	github.com/go-acme/lego/v4 v4.35.2 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
+	github.com/miekg/dns v1.1.72 // indirect
 	github.com/smallstep/truststore v0.13.0 // indirect
 	github.com/tdewolff/minify/v2 v2.24.8 // indirect
 	github.com/tdewolff/parse/v2 v2.8.5 // indirect
-	golang.org/x/crypto v0.53.0 // indirect
+	golang.org/x/crypto v0.54.0 // indirect
 	golang.org/x/image v0.45.0 // indirect
-	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/net v0.57.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/tools v0.48.0 // indirect
 	howett.net/plist v1.0.0 // indirect
 	webtyp.com/agentcontext v0.3.2 // indirect
 	webtyp.com/await v0.1.2 // indirect
