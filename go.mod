@@ -48,7 +48,7 @@ require (
 	webtyp.com/font v0.0.5 // indirect
 	webtyp.com/image v0.1.16 // indirect
 	webtyp.com/js v0.1.3 // indirect
-	webtyp.com/json v0.5.29 // indirect
+	webtyp.com/json v0.5.37 // indirect
 	webtyp.com/lang v0.1.10 // indirect
 	webtyp.com/mcp v0.3.4 // indirect
 	webtyp.com/modfind v0.0.11 // indirect
