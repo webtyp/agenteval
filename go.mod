@@ -63,7 +63,7 @@ require (
 	webtyp.com/nn v0.5.0 // indirect
 	webtyp.com/opfs v0.1.3 // indirect
 	webtyp.com/pwa v0.2.13 // indirect
-	webtyp.com/router v0.4.15 // indirect
+	webtyp.com/router v0.4.16 // indirect
 	webtyp.com/svg v0.3.30 // indirect
 	webtyp.com/tinygo v1.0.1 // indirect
 	webtyp.com/tokenizer v0.4.2 // indirect
