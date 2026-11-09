@@ -143,7 +143,7 @@ func (j *deciderJudge) Decide(ctx *context.Context, q llm.Question) (llm.Decisio
 	sb.WriteString(q.Text)
 	sb.WriteString("\nOptions:\n")
 	for i, opt := range q.Options {
-		sb.WriteString(fmt.Sprintf("(%c) %s\n", 'A'+i, opt))
+		fmt.Fprintf(&sb, "(%c) %s\n", 'A'+i, opt)
 	}
 	sb.WriteString("Answer: (")
 	part2 := sb.String()
@@ -228,12 +228,12 @@ func buildJudgeState(a Attempt) string {
 	dayOfWeek = t.Weekday()
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Today is %s %04d-%02d-%02d %02d:%02d.\n", dayOfWeek.String(), a.At.Year, a.At.Month, a.At.Day, a.At.Hour, a.At.Minute))
-	sb.WriteString(fmt.Sprintf("User asked: %s\n", a.Question))
+	fmt.Fprintf(&sb, "Today is %s %04d-%02d-%02d %02d:%02d.\n", dayOfWeek.String(), a.At.Year, a.At.Month, a.At.Day, a.At.Hour, a.At.Minute)
+	fmt.Fprintf(&sb, "User asked: %s\n", a.Question)
 	for _, call := range a.Calls {
-		sb.WriteString(fmt.Sprintf("Tool %s returned: %s\n", call.Name, call.Output))
+		fmt.Fprintf(&sb, "Tool %s returned: %s\n", call.Name, call.Output)
 	}
-	sb.WriteString(fmt.Sprintf("Assistant answered: %s", a.Answer))
+	fmt.Fprintf(&sb, "Assistant answered: %s", a.Answer)
 	return sb.String()
 }
 

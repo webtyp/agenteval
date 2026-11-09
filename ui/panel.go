@@ -145,9 +145,10 @@ func (p *Panel) answer(confirm bool) {
 // onEvent is the Worker's events, on the page's goroutine.
 func (p *Panel) onEvent(e agentworker.Event) {
 	if p.avatar != nil {
-		if e.Kind == agentworker.EventReply {
+		switch e.Kind {
+		case agentworker.EventReply:
 			p.avatar.Speak(e.Text)
-		} else if e.Kind == agentworker.EventFailed {
+		case agentworker.EventFailed:
 			p.avatar.SetEmotion(avatar.Sad)
 			p.avatar.Speak(e.Text)
 		}
