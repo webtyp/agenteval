@@ -73,7 +73,7 @@ require (
 	webtyp.com/tokenizer v0.4.2 // indirect
 	webtyp.com/vector v0.1.1 // indirect
 	webtyp.com/weights v0.4.0 // indirect
-	webtyp.com/widget v0.6.46 // indirect
+	webtyp.com/widget v0.6.47 // indirect
 )
 
 // dom v0.13.19 made Show lazy and components is not migrated yet: back to ../dom once it is.
