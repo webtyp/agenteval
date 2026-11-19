@@ -142,21 +142,6 @@ func (p *Panel) answer(confirm bool) {
 	}
 }
 
-// onEvent is the Worker's events, on the page's goroutine.
-func (p *Panel) onEvent(e agentworker.Event) {
-	if p.avatar != nil {
-		switch e.Kind {
-		case agentworker.EventReply:
-			p.avatar.Speak(e.Text)
-		case agentworker.EventFailed:
-			p.avatar.SetEmotion(avatar.Sad)
-			p.avatar.Speak(e.Text)
-		}
-	}
-	p.State.Apply(e)
-	p.update()
-}
-
 // update pushes State into what the panel shows: the only place the view changes.
 func (p *Panel) update() {
 	s := &p.State
